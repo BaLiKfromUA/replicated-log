@@ -58,3 +58,14 @@ func TestGetMessages(t *testing.T) {
 		assert.Equal(t, []string{"first one", "second", "third", "Four", "Five is out of order"}, messages)
 	})
 }
+
+func TestAddRawMessage(t *testing.T) {
+	storage := NewInMemoryStorage()
+	// when
+	_ = storage.AddRawMessage("first")
+	_ = storage.AddRawMessage("second")
+	_ = storage.AddRawMessage("third")
+	// then
+	messages := storage.GetMessages()
+	assert.Equal(t, []string{"first", "second", "third"}, messages)
+}
