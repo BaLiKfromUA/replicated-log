@@ -1,24 +1,27 @@
 package main
 
 import (
-	"fmt"
-	"html"
 	"log"
-	"net/http"
+	"os"
+)
+
+const (
+	modePrimary   = "PRIMARY"
+	modeSecondary = "SECONDARY"
 )
 
 func main() {
+	mode, ok := os.LookupEnv("APP_MODE")
+	if !ok {
+		mode = modePrimary
+	}
 
-	log.Print("Started server")
+	switch mode {
+	case modePrimary:
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
-	})
-
-	http.HandleFunc("/hi", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hi")
-	})
-
-	log.Fatal(http.ListenAndServe(":8081", nil))
-
+	case modeSecondary:
+		log.Fatal("Not implemented yet")
+	default:
+		log.Fatalf("Unexpected mode flag: %s", mode)
+	}
 }
