@@ -1,0 +1,45 @@
+openapi: 3.0.3
+info:
+  title: Secondary
+  description: Basic API for secondary servers
+  version: 1.0.0
+components:
+  schemas:
+    MessageId:
+      type: integer
+    Message:
+      type: object
+      nullable: false
+      properties:
+        order:
+          allOf:
+            - $ref: '#/components/schemas/MessageId'
+            - nullable: false
+        message:
+          type: string
+          nullable: false
+paths:
+  /api/v1/replicate:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Message'
+      responses:
+        200:
+          description: Replication is successfully done
+  /api/v1/messages:
+    get:
+      responses:
+        200:
+          description: All messages in order of arrival
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      type: string

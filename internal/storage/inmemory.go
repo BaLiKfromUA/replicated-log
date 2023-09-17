@@ -11,8 +11,8 @@ type InMemoryStorage struct {
 	data map[model.MessageId]string
 }
 
-func NewInMemoryStorage() InMemoryStorage {
-	return InMemoryStorage{
+func NewInMemoryStorage() *InMemoryStorage {
+	return &InMemoryStorage{
 		mu:   &sync.Mutex{},
 		data: make(map[model.MessageId]string),
 	}

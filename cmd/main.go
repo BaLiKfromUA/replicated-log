@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
+	"replicated-log/internal/secondary"
 )
 
 const (
@@ -16,12 +18,17 @@ func main() {
 		mode = modePrimary
 	}
 
+	var srv *http.Server
+
 	switch mode {
 	case modePrimary:
-
-	case modeSecondary:
 		log.Fatal("Not implemented yet")
+	case modeSecondary:
+		srv = secondary.NewSecondaryServer()
 	default:
 		log.Fatalf("Unexpected mode flag: %s", mode)
 	}
+
+	log.Printf("Start serving HTTP at %s", srv.Addr)
+	log.Fatal(srv.ListenAndServe())
 }
