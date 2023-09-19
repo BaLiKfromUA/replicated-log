@@ -9,6 +9,7 @@ import (
 	"os"
 	"replicated-log/internal/model"
 	"strings"
+	"sync"
 )
 
 type Executor struct {
@@ -57,14 +58,23 @@ func (e *Executor) ReplicateMessage(message model.Message) {
 	payload, _ := json.Marshal(message)
 	reqBody := string(payload)
 
-	for _, secondaryUrl := range e.secondaryUrls {
-		req := io.NopCloser(strings.NewReader(reqBody))
-		resp, err := e.client.Post(secondaryUrl+"/api/v1/replicate", "application/json", req)
+	var wg sync.WaitGroup
+	wg.Add(len(e.secondaryUrls))
 
-		if err != nil || resp.StatusCode != http.StatusOK {
-			log.Printf("Failed to replicate message. Secondary url: %s, err: %s, status code: %d", secondaryUrl, err, resp.StatusCode)
-		} else {
-			log.Printf("ACK. Secondary url: %s", secondaryUrl)
-		}
+	for _, secondaryUrl := range e.secondaryUrls {
+		go func(secondaryUrl, reqBody string) {
+			req := io.NopCloser(strings.NewReader(reqBody))
+			resp, err := e.client.Post(secondaryUrl+"/api/v1/replicate", "application/json", req)
+
+			if err != nil || resp.StatusCode != http.StatusOK {
+				log.Printf("Failed to replicate message. Secondary url: %s, err: %s, status code: %d", secondaryUrl, err, resp.StatusCode)
+			} else {
+				log.Printf("ACK. Secondary url: %s", secondaryUrl)
+			}
+
+			wg.Done()
+		}(secondaryUrl, reqBody)
 	}
+
+	wg.Wait()
 }
