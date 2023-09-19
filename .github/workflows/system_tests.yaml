@@ -1,0 +1,19 @@
+name: System testing with Docker Compose
+
+on: [ push ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run docker-compose
+        working-directory: deployment
+        run: docker-compose run tester
+
+      - name: Clean up
+        if: always()
+        working-directory: deployment
+        run: docker-compose down
