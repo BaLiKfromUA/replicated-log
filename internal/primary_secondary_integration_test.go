@@ -71,6 +71,9 @@ func (s *PrimarySecondaryIntegrationTestSuite) TestBasicReplication() {
 
 // setUp/tearDown
 func (s *PrimarySecondaryIntegrationTestSuite) BeforeTest(_, _ string) {
+	s.T().Setenv("PRIMARY_SERVER_PORT", "8000")
+	s.T().Setenv("SECONDARY_SERVER_PORT", "8080")
+
 	s.secondary = secondary.NewSecondaryServer()
 	go func() {
 		log.Printf("Start serving SECONDARY on %s", s.secondary.Addr)

@@ -54,6 +54,7 @@ func (s *PrimaryApiSuite) TestAppendMessage() {
 	}))
 	defer secondary.Close()
 
+	s.T().Setenv("PRIMARY_SERVER_PORT", "8082")
 	s.T().Setenv("SECONDARY_URLS", secondary.URL)
 
 	s.primary = NewPrimaryServer()
@@ -64,7 +65,7 @@ func (s *PrimaryApiSuite) TestAppendMessage() {
 
 	s.Run("Initial message list is empty", func() {
 		// WHEN
-		resp, err := s.client.Get("http://localhost:8000/api/v1/messages")
+		resp, err := s.client.Get("http://localhost:8082/api/v1/messages")
 
 		// THEN
 		s.Require().NoError(err)
@@ -76,7 +77,7 @@ func (s *PrimaryApiSuite) TestAppendMessage() {
 
 	s.Run("Append a new message", func() {
 		// WHEN
-		resp, err := s.client.Post("http://localhost:8000/api/v1/append", "application/json", reqBody)
+		resp, err := s.client.Post("http://localhost:8082/api/v1/append", "application/json", reqBody)
 
 		// THEN
 		s.Require().NoError(err)
@@ -85,7 +86,7 @@ func (s *PrimaryApiSuite) TestAppendMessage() {
 
 	s.Run("Update message list contains appended message", func() {
 		// WHEN
-		resp, err := s.client.Get("http://localhost:8000/api/v1/messages")
+		resp, err := s.client.Get("http://localhost:8082/api/v1/messages")
 
 		// THEN
 		s.Require().NoError(err)

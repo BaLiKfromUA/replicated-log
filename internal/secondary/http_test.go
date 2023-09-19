@@ -41,7 +41,7 @@ func TestSecondaryAPI(t *testing.T) {
 func (s *SecondaryApiSuite) TestReplication() {
 	s.Run("Initial message list is empty", func() {
 		// when
-		resp, err := s.client.Get("http://localhost:8080/api/v1/messages")
+		resp, err := s.client.Get("http://localhost:8081/api/v1/messages")
 
 		// then
 		s.Require().NoError(err)
@@ -58,7 +58,7 @@ func (s *SecondaryApiSuite) TestReplication() {
 		r := io.NopCloser(strings.NewReader(string(b)))
 
 		// when
-		resp, err := s.client.Post("http://localhost:8080/api/v1/replicate", "application/json", r)
+		resp, err := s.client.Post("http://localhost:8081/api/v1/replicate", "application/json", r)
 
 		// then
 		s.Require().NoError(err)
@@ -67,7 +67,7 @@ func (s *SecondaryApiSuite) TestReplication() {
 
 	s.Run("Update message list contains replicated message", func() {
 		// when
-		resp, err := s.client.Get("http://localhost:8080/api/v1/messages")
+		resp, err := s.client.Get("http://localhost:8081/api/v1/messages")
 
 		// then
 		s.Require().NoError(err)
@@ -90,6 +90,7 @@ func (s *SecondaryApiSuite) SetupSuite() {
 }
 
 func (s *SecondaryApiSuite) BeforeTest(_, _ string) {
+	s.T().Setenv("SECONDARY_SERVER_PORT", "8081")
 	s.server = NewSecondaryServer()
 	go func() {
 		log.Printf("Start serving on %s", s.server.Addr)
