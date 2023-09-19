@@ -1,33 +1,39 @@
-package secondary
+package primary
 
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"net/http"
 	"os"
-	"replicated-log/internal/model"
+	"replicated-log/internal/replication"
 	"replicated-log/internal/storage"
 	"time"
 )
 
 type HttpHandler struct {
-	storage *storage.InMemoryStorage
+	storage  *storage.InMemoryStorage
+	executor *replication.Executor
+}
+
+type AppendMessageRequest struct {
+	Message string `json:"message"`
 }
 
 type GetMessagesResponse struct {
 	Messages []string `json:"messages"`
 }
 
-func (h *HttpHandler) ReplicateMessage(rw http.ResponseWriter, r *http.Request) {
-	var message model.Message
+func (h *HttpHandler) AppendMessage(rw http.ResponseWriter, r *http.Request) {
+	var payload AppendMessageRequest
 
-	err := json.NewDecoder(r.Body).Decode(&message)
+	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	_ = h.storage.AddMessage(message)
+	message := h.storage.AddRawMessage(payload.Message)
+	h.executor.ReplicateMessage(message)
 	rw.WriteHeader(http.StatusOK)
 }
 
@@ -46,20 +52,21 @@ func (h *HttpHandler) GetMessages(rw http.ResponseWriter, _ *http.Request) {
 func createRouter(handler *HttpHandler) *mux.Router {
 	r := mux.NewRouter()
 
-	r.HandleFunc("/api/v1/replicate", handler.ReplicateMessage).Methods(http.MethodPost)
+	r.HandleFunc("/api/v1/append", handler.AppendMessage).Methods(http.MethodPost)
 	r.HandleFunc("/api/v1/messages", handler.GetMessages)
 
 	return r
 }
 
-func NewSecondaryServer() *http.Server {
+func NewPrimaryServer() *http.Server {
 	handler := &HttpHandler{
-		storage: storage.NewInMemoryStorage(),
+		storage:  storage.NewInMemoryStorage(),
+		executor: replication.NewExecutor(),
 	}
 
-	port, ok := os.LookupEnv("SECONDARY_SERVER_PORT")
+	port, ok := os.LookupEnv("PRIMARY_SERVER_PORT")
 	if !ok {
-		port = "8080"
+		port = "8000"
 	}
 
 	srv := &http.Server{

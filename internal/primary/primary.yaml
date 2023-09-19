@@ -1,0 +1,33 @@
+openapi: 3.0.3
+info:
+  title: Primary
+  description: Basic API for primary server
+  version: 1.0.0
+paths:
+  /api/v1/append:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+      responses:
+        200:
+          description: Message is successfully appended
+  /api/v1/messages:
+    get:
+      responses:
+        200:
+          description: All messages in order of arrival
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      type: string
