@@ -18,3 +18,6 @@ jobs:
 
       - name: Test
         run: go test -v -p 1 ./...
+
+      - name: Test with race
+        run: go test -race -v -p 1 ./...
