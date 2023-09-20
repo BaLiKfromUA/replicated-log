@@ -74,9 +74,13 @@ func (s *PrimarySecondaryIntegrationTestSuite) BeforeTest(_, _ string) {
 	s.T().Setenv("PRIMARY_SERVER_PORT", "8000")
 	s.T().Setenv("SECONDARY_SERVER_PORT", "8080")
 
+	ready := make(chan struct{}, 2)
+	defer close(ready)
+
 	s.secondary = secondary.NewSecondaryServer()
 	go func() {
 		log.Printf("Start serving SECONDARY on %s", s.secondary.Addr)
+		ready <- struct{}{}
 		log.Println(s.secondary.ListenAndServe())
 	}()
 
@@ -84,8 +88,14 @@ func (s *PrimarySecondaryIntegrationTestSuite) BeforeTest(_, _ string) {
 	s.primary = primary.NewPrimaryServer()
 	go func() {
 		log.Printf("Start serving PRIMARY on %s", s.primary.Addr)
+		ready <- struct{}{}
 		log.Println(s.primary.ListenAndServe())
 	}()
+
+	// waiting for all services to start in order to ensure that test is not flaky
+	for i := 0; i < 2; i++ {
+		<-ready
+	}
 }
 
 func (s *PrimarySecondaryIntegrationTestSuite) AfterTest() {

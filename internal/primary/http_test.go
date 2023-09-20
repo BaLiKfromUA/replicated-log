@@ -57,11 +57,7 @@ func (s *PrimaryApiSuite) TestAppendMessage() {
 	s.T().Setenv("PRIMARY_SERVER_PORT", "8082")
 	s.T().Setenv("SECONDARY_URLS", secondary.URL)
 
-	s.primary = NewPrimaryServer()
-	go func() {
-		log.Printf("Start serving on %s", s.primary.Addr)
-		log.Println(s.primary.ListenAndServe())
-	}()
+	s.RunServer()
 
 	s.Run("Initial message list is empty", func() {
 		// WHEN
@@ -98,6 +94,17 @@ func (s *PrimaryApiSuite) TestAppendMessage() {
 }
 
 // setup/teardown
+func (s *PrimaryApiSuite) RunServer() {
+	s.primary = NewPrimaryServer()
+	serviceRunning := make(chan struct{})
+	go func() {
+		log.Printf("Start serving on %s", s.primary.Addr)
+		close(serviceRunning)
+		log.Println(s.primary.ListenAndServe())
+	}()
+	<-serviceRunning
+}
+
 func (s *PrimaryApiSuite) AfterTest() {
 	s.Require().NoError(s.primary.Shutdown(ctx))
 }

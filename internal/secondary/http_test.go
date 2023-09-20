@@ -92,10 +92,13 @@ func (s *SecondaryApiSuite) SetupSuite() {
 func (s *SecondaryApiSuite) BeforeTest(_, _ string) {
 	s.T().Setenv("SECONDARY_SERVER_PORT", "8081")
 	s.server = NewSecondaryServer()
+	serviceRunning := make(chan struct{}, 1)
 	go func() {
 		log.Printf("Start serving on %s", s.server.Addr)
+		close(serviceRunning)
 		log.Println(s.server.ListenAndServe())
 	}()
+	<-serviceRunning
 }
 
 func (s *SecondaryApiSuite) AfterTest() {
