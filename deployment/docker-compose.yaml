@@ -10,7 +10,7 @@ services:
     environment:
       - APP_MODE=PRIMARY
       - PRIMARY_SERVER_PORT=8080
-      - SECONDARY_URLS=secondary1:8000,secondary2:8000
+      - SECONDARY_URLS=http://secondary1:8000,http://secondary2:8000
 
   secondary1:
     build:
@@ -43,6 +43,10 @@ services:
       - secondary1
       - secondary2
     command: pytest .
+    environment:
+      - PRIMARY_URL=http://primary:8080
+      - SECONDARY1_URL=http://secondary1:8000
+      - SECONDARY2_URL=http://secondary1:8000
 
 networks:
   isolated_network:
