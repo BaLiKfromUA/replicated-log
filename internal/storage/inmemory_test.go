@@ -16,6 +16,11 @@ func TestAddMessage(t *testing.T) {
 		isAdded := storage.AddMessage(message)
 		// then
 		assert.True(t, isAdded)
+
+		assert.Equal(t, 1, len(storage.data))
+		actual, ok := storage.data[0]
+		assert.True(t, ok)
+		assert.Equal(t, message.Message, actual)
 	})
 
 	t.Run("Item message the same ID cannot be added again", func(t *testing.T) {
@@ -23,6 +28,7 @@ func TestAddMessage(t *testing.T) {
 		isAdded := storage.AddMessage(message)
 		// then
 		assert.False(t, isAdded)
+		assert.Equal(t, 1, len(storage.data))
 	})
 }
 

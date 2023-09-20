@@ -96,7 +96,7 @@ func (s *PrimaryApiSuite) TestAppendMessage() {
 // setup/teardown
 func (s *PrimaryApiSuite) RunServer() {
 	s.primary = NewPrimaryServer()
-	serviceRunning := make(chan struct{})
+	serviceRunning := make(chan struct{}, 1)
 	go func() {
 		log.Printf("Start serving on %s", s.primary.Addr)
 		close(serviceRunning)
