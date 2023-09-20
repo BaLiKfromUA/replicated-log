@@ -42,7 +42,7 @@ services:
       - primary
       - secondary1
       - secondary2
-    command: pytest .
+    command: pytest -v .
     environment:
       - PRIMARY_URL=http://primary:8080
       - SECONDARY1_URL=http://secondary1:8000
