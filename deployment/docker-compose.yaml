@@ -10,7 +10,7 @@ services:
     environment:
       - APP_MODE=PRIMARY
       - PRIMARY_SERVER_PORT=8080
-      - SECONDARY_URLS=secondary1:8000,secondary2:8001
+      - SECONDARY_URLS=secondary1:8000,secondary2:8000
 
   secondary1:
     build:
@@ -30,7 +30,7 @@ services:
       - isolated_network
     environment:
       - APP_MODE=SECONDARY
-      - SECONDARY_SERVER_PORT=8001
+      - SECONDARY_SERVER_PORT=8000
 
   tester:
     build:
