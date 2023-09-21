@@ -18,7 +18,7 @@ func TestAddMessage(t *testing.T) {
 		assert.True(t, isAdded)
 
 		assert.Equal(t, 1, len(storage.data))
-		actual, ok := storage.data[0]
+		actual, ok := storage.data[message.Id]
 		assert.True(t, ok)
 		assert.Equal(t, message.Message, actual)
 	})
