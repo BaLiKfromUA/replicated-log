@@ -1,8 +1,8 @@
-# replicated-log
+# Replicated Log
 
 Distributed system for basic logs replication. Primary-secondary push model.
 
-### Current scope of features
+### Current scope
 
 The Replicated Log should have the following deployment architecture: one **Primary** and any number of **Secondaries**.
 
