@@ -93,10 +93,12 @@ func TestReplicationWithEmulatedDelayForOneSecondaryOutOfTwo(t *testing.T) {
 	storageB := storage.NewInMemoryStorage()
 	secondaryB := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		<-ready // artificial delay
+
 		var message model.Message
 		err := json.NewDecoder(r.Body).Decode(&message)
 		require.NoError(t, err)
 		_ = storageB.AddMessage(message)
+
 		updated <- struct{}{} // notify test
 		rw.WriteHeader(http.StatusOK)
 	}))
@@ -166,14 +168,15 @@ func TestReplicationWithSecondariesBothBlocked(t *testing.T) {
 	w := 1 // ACK only from master
 	expectedMessage := "Test"
 	secondaryHandler := func(rw http.ResponseWriter, r *http.Request) {
+		defer wgForStorageUpdates.Done()
 		<-ready // artificial delay
+
 		var actualMessage model.Message
 		err := json.NewDecoder(r.Body).Decode(&actualMessage)
 		// THEN
 		require.NoError(t, err)
 		require.Equal(t, expectedMessage, actualMessage.Message)
 		rw.WriteHeader(http.StatusOK)
-		wgForStorageUpdates.Done()
 	}
 
 	secondaryA := httptest.NewServer(http.HandlerFunc(secondaryHandler))
@@ -196,6 +199,7 @@ func TestReplicationWithSecondariesBothBlocked(t *testing.T) {
 	// THEN
 	assert.Equal(t, http.StatusOK, resp.Code)
 
+	// unblock all secondaries
 	ready <- struct{}{}
 	ready <- struct{}{}
 	close(ready)
