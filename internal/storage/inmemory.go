@@ -70,5 +70,9 @@ func (s *InMemoryStorage) GetMessages() []string {
 		result = append(result, value)
 	}
 
+	if result == nil {
+		result = []string{}
+	}
+
 	return result
 }

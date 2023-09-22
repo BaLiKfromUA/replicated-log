@@ -40,9 +40,6 @@ func (h *HttpHandler) AppendMessage(rw http.ResponseWriter, r *http.Request) {
 
 func (h *HttpHandler) GetMessages(rw http.ResponseWriter, _ *http.Request) {
 	messages := h.storage.GetMessages()
-	if messages == nil {
-		messages = []string{}
-	}
 
 	rw.Header().Set("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusOK)

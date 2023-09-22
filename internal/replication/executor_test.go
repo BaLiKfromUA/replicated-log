@@ -57,7 +57,6 @@ func TestReplicateMessageWithTwoSecondariesDelayedResponse(t *testing.T) {
 	// GIVEN
 	message := model.Message{Id: 0, Message: "first one"}
 	ready := make(chan struct{}, 2) // to emulate delay
-	defer close(ready)
 
 	handler := func(rw http.ResponseWriter, r *http.Request) {
 		<-ready // artificial delay
