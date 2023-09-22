@@ -9,7 +9,6 @@ import (
 	"os"
 	"replicated-log/internal/model"
 	"strings"
-	"sync"
 )
 
 type Executor struct {
@@ -66,8 +65,8 @@ func (e *Executor) ReplicateMessage(message model.Message, w int) {
 		log.Fatalf("w > primaries number, %d > %d", w, len(e.secondaryUrls))
 	}
 
-	var wg sync.WaitGroup
-	wg.Add(max(w, 0))
+	// Buffered channels allows to accept a limited number of values without a corresponding receiver for those values
+	replicationIsFinished := make(chan struct{}, len(e.secondaryUrls))
 
 	for _, secondaryUrl := range e.secondaryUrls {
 		go func(url, reqBody string) {
@@ -81,10 +80,13 @@ func (e *Executor) ReplicateMessage(message model.Message, w int) {
 				log.Printf("Failed to replicate message. Secondary url: %s, status code: %d", url, resp.StatusCode)
 			} else {
 				log.Printf("ACK. Secondary url: %s", url)
-				wg.Done()
+				replicationIsFinished <- struct{}{}
 			}
 		}(secondaryUrl, reqBody)
 	}
 
-	wg.Wait()
+	for w > 0 {
+		<-replicationIsFinished
+		w--
+	}
 }
