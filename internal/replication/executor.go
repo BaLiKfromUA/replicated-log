@@ -58,16 +58,19 @@ func NewExecutor() *Executor {
 	return &Executor{secondaryUrls: secondaryUrls, client: http.Client{}}
 }
 
-func (e *Executor) ReplicateMessage(message model.Message) {
+func (e *Executor) ReplicateMessage(message model.Message, w int) {
 	payload, _ := json.Marshal(message)
 	reqBody := string(payload)
 
+	if w > len(e.secondaryUrls) {
+		log.Fatalf("w > primaries number, %d > %d", w, len(e.secondaryUrls))
+	}
+
 	var wg sync.WaitGroup
-	wg.Add(len(e.secondaryUrls))
+	wg.Add(max(w, 0))
 
 	for _, secondaryUrl := range e.secondaryUrls {
 		go func(url, reqBody string) {
-			defer wg.Done()
 
 			req := io.NopCloser(strings.NewReader(reqBody))
 			resp, err := e.client.Post(url+"/api/v1/replicate", "application/json", req)
@@ -78,6 +81,7 @@ func (e *Executor) ReplicateMessage(message model.Message) {
 				log.Printf("Failed to replicate message. Secondary url: %s, status code: %d", url, resp.StatusCode)
 			} else {
 				log.Printf("ACK. Secondary url: %s", url)
+				wg.Done()
 			}
 		}(secondaryUrl, reqBody)
 	}

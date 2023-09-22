@@ -1,4 +1,5 @@
 import os
+
 from http_utility import append_message, get_messages
 
 PRIMARY_URL = os.getenv("PRIMARY_URL")
@@ -10,7 +11,7 @@ def test_basic_replication() -> None:
     # GIVEN
     message = "test"
     # WHEN
-    is_added = append_message(PRIMARY_URL, message)
+    is_added = append_message(PRIMARY_URL, message, 3)
 
     messages_primary = get_messages(PRIMARY_URL)
     messages_secondary1 = get_messages(SECONDARY1_URL)

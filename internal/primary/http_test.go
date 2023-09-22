@@ -13,7 +13,7 @@ import (
 
 func TestAppendMessage(t *testing.T) {
 	// GIVEN
-	message := model.Message{Id: 0, Message: "Test"}
+	message := AppendMessageRequest{W: 2, Message: "Test"}
 	b, _ := json.Marshal(message)
 
 	secondary := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
@@ -21,7 +21,7 @@ func TestAppendMessage(t *testing.T) {
 		err := json.NewDecoder(r.Body).Decode(&actualMessage)
 		// THEN
 		assert.NoError(t, err)
-		assert.Equal(t, message, actualMessage)
+		assert.Equal(t, message.Message, actualMessage.Message)
 		rw.WriteHeader(http.StatusOK)
 	}))
 	defer secondary.Close()

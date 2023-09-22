@@ -10,9 +10,10 @@ def get_messages(url: str) -> list[str]:
     return data["messages"]
 
 
-def append_message(url: str, message: str) -> bool:
+def append_message(url: str, message: str, w: int) -> bool:
     data = {
-        "message": message
+        "message": message,
+        "w": w
     }
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
     resp = requests.post(url=url + "/api/v1/append", json=data, headers=headers)

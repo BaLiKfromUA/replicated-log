@@ -17,6 +17,7 @@ type HttpHandler struct {
 
 type AppendMessageRequest struct {
 	Message string `json:"message"`
+	W       int    `json:"w"`
 }
 
 type GetMessagesResponse struct {
@@ -33,7 +34,7 @@ func (h *HttpHandler) AppendMessage(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	message := h.storage.AddRawMessage(payload.Message)
-	h.executor.ReplicateMessage(message)
+	h.executor.ReplicateMessage(message, payload.W-1)
 	rw.WriteHeader(http.StatusOK)
 }
 

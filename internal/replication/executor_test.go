@@ -26,7 +26,7 @@ func TestReplicateMessageWithOneSecondary(t *testing.T) {
 	t.Setenv("SECONDARY_URLS", secondary.URL)
 
 	// WHEN
-	NewExecutor().ReplicateMessage(message)
+	NewExecutor().ReplicateMessage(message, 1)
 }
 
 func TestReplicateMessageWithTwoSecondaries(t *testing.T) {
@@ -50,5 +50,5 @@ func TestReplicateMessageWithTwoSecondaries(t *testing.T) {
 	t.Setenv("SECONDARY_URLS", secondaryA.URL+","+secondaryB.URL)
 
 	// WHEN
-	NewExecutor().ReplicateMessage(message)
+	NewExecutor().ReplicateMessage(message, 2)
 }
