@@ -8,6 +8,7 @@ SECONDARY2_URL = os.getenv("SECONDARY2_URL")
 
 
 def test_basic_replication() -> None:
+    """simple test to ensure that whole system works as expected from 1 iteration"""
     # GIVEN
     message = "test"
     # WHEN
