@@ -19,7 +19,7 @@ components:
           type: string
           nullable: false
 paths:
-  /api/v1/replicate:
+  /api/v1/internal/replicate:
     post:
       requestBody:
         content:

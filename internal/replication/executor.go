@@ -72,7 +72,7 @@ func (e *Executor) ReplicateMessage(message model.Message, w int) {
 		go func(url, reqBody string) {
 
 			req := io.NopCloser(strings.NewReader(reqBody))
-			resp, err := e.client.Post(url+"/api/v1/replicate", "application/json", req)
+			resp, err := e.client.Post(url+"/api/v1/internal/replicate", "application/json", req)
 
 			if err != nil {
 				log.Printf("Failed to replicate message. Secondary url: %s, err: %s", url, err)
