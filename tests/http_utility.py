@@ -19,3 +19,9 @@ def append_message(url: str, message: str, w: int) -> bool:
     resp = requests.post(url=url + "/api/v1/append", json=data, headers=headers)
     print(resp)
     return resp.status_code == 200
+
+
+def clean_storage(url: str) -> bool:
+    resp = requests.post(url=url + "/api/test/clean")
+    print(resp)
+    return resp.status_code == 200

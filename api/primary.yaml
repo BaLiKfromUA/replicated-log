@@ -33,3 +33,9 @@ paths:
                     type: array
                     items:
                       type: string
+  /api/test/clean:
+    description: "Clean database. Use only for system testing"
+    post:
+      responses:
+        200:
+          description: Success

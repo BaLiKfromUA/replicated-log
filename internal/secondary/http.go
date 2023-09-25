@@ -40,11 +40,17 @@ func (h *HttpHandler) GetMessages(rw http.ResponseWriter, _ *http.Request) {
 	_, _ = rw.Write(rawResponse)
 }
 
+func (h *HttpHandler) CleanStorage(rw http.ResponseWriter, _ *http.Request) {
+	h.storage.Clear()
+	rw.WriteHeader(http.StatusOK)
+}
+
 func createRouter(handler *HttpHandler) *mux.Router {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/api/v1/internal/replicate", handler.ReplicateMessage).Methods(http.MethodPost)
-	r.HandleFunc("/api/v1/messages", handler.GetMessages)
+	r.HandleFunc("/api/v1/messages", handler.GetMessages).Methods(http.MethodGet)
+	r.HandleFunc("/api/test/clean", handler.CleanStorage).Methods(http.MethodPost)
 
 	return r
 }
