@@ -1,13 +1,8 @@
-import os
-
 from http_utility import append_message, get_messages
 
-PRIMARY_URL = os.getenv("PRIMARY_URL")
-SECONDARY1_URL = os.getenv("SECONDARY1_URL")
-SECONDARY2_URL = os.getenv("SECONDARY2_URL")
 
-
-def test_basic_replication() -> None:
+def test_basic_replication(primary_url, secondary1_url, secondary2_url) -> None:
+    """simple test to ensure that whole system works as expected from 1 iteration"""
     # GIVEN
     messages = ["msg 1", "msg 2", "msg 3", "msg 4", "msg 5"]
 

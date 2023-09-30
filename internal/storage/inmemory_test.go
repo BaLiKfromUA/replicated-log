@@ -67,11 +67,26 @@ func TestGetMessages(t *testing.T) {
 
 func TestAddRawMessage(t *testing.T) {
 	storage := NewInMemoryStorage()
-	// when
+	// WHEN
 	_ = storage.AddRawMessage("first")
 	_ = storage.AddRawMessage("second")
 	_ = storage.AddRawMessage("third")
-	// then
+	// THEN
 	messages := storage.GetMessages()
 	assert.Equal(t, []string{"first", "second", "third"}, messages)
+}
+
+func TestClear(t *testing.T) {
+	storage := NewInMemoryStorage()
+	// GIVEN
+	_ = storage.AddRawMessage("first")
+	_ = storage.AddRawMessage("second")
+	_ = storage.AddRawMessage("third")
+	// WHEN
+	before := len(storage.GetMessages()) > 0
+	storage.Clear()
+	after := len(storage.GetMessages()) > 0
+	// THEN
+	assert.True(t, before)
+	assert.False(t, after)
 }

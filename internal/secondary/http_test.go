@@ -35,7 +35,7 @@ func TestReplicateAndGetMessages(t *testing.T) {
 		// GIVEN
 		message := model.Message{Id: 0, Message: "Test"}
 		b, _ := json.Marshal(message)
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/replicate", strings.NewReader(string(b)))
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/internal/replicate", strings.NewReader(string(b)))
 		resp := httptest.NewRecorder()
 
 		// WHEN

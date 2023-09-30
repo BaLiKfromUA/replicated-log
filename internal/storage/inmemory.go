@@ -70,5 +70,16 @@ func (s *InMemoryStorage) GetMessages() []string {
 		result = append(result, value)
 	}
 
+	if result == nil {
+		result = []string{}
+	}
+
 	return result
+}
+
+func (s *InMemoryStorage) Clear() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	log.Println("Cleaning storage...")
+	s.data = make(map[model.MessageId]string) // create empty map
 }

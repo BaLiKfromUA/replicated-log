@@ -19,7 +19,7 @@ components:
           type: string
           nullable: false
 paths:
-  /api/v1/replicate:
+  /api/v1/internal/replicate:
     post:
       requestBody:
         content:
@@ -43,3 +43,9 @@ paths:
                     type: array
                     items:
                       type: string
+  /api/test/clean:
+    description: "Clean database. Use only for system testing"
+    post:
+      responses:
+        200:
+          description: Success
