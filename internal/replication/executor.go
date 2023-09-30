@@ -68,6 +68,7 @@ func (e *Executor) ReplicateMessage(message model.Message, w int) {
 	// Buffered channels allows to accept a limited number of values without a corresponding receiver for those values
 	replicationIsFinished := make(chan struct{}, len(e.secondaryUrls))
 
+	log.Printf("Replicating message %d\n", message.Id)
 	for _, secondaryUrl := range e.secondaryUrls {
 		go func(url, reqBody string) {
 
@@ -75,11 +76,13 @@ func (e *Executor) ReplicateMessage(message model.Message, w int) {
 			resp, err := e.client.Post(url+"/api/v1/internal/replicate", "application/json", req)
 
 			if err != nil {
-				log.Printf("Failed to replicate message. Secondary url: %s, err: %s", url, err)
+				// at this stage assume that the communication channel is a perfect link (no failures and messages lost)
+				log.Fatalf("Failed to replicate message. Secondary url: %s, err: %s", url, err)
 			} else if resp.StatusCode != 200 {
-				log.Printf("Failed to replicate message. Secondary url: %s, status code: %d", url, resp.StatusCode)
+				// at this stage assume that the communication channel is a perfect link (no failures and messages lost)
+				log.Fatalf("Failed to replicate message. Secondary url: %s, status code: %d", url, resp.StatusCode)
 			} else {
-				log.Printf("ACK. Secondary url: %s", url)
+				log.Printf("ACK (message %d). Secondary url: %s\n", message.Id, url)
 				replicationIsFinished <- struct{}{}
 			}
 		}(secondaryUrl, reqBody)

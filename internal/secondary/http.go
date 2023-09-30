@@ -3,6 +3,7 @@ package secondary
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 	"os"
 	"replicated-log/internal/model"
@@ -27,7 +28,10 @@ func (h *HttpHandler) ReplicateMessage(rw http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	_ = h.storage.AddMessage(message)
+	log.Printf("Received message %d with content '%s'\n", message.Id, message.Message)
+	isAdded := h.storage.AddMessage(message)
+	log.Printf("Added message %d to the storage: %t\n", message.Id, isAdded)
+
 	rw.WriteHeader(http.StatusOK)
 }
 
