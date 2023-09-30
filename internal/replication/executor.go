@@ -65,6 +65,7 @@ func (e *Executor) ReplicateMessage(message model.Message) {
 	var wg sync.WaitGroup
 	wg.Add(len(e.secondaryUrls))
 
+	log.Printf("Replicating message %d\n", message.Id)
 	for _, secondaryUrl := range e.secondaryUrls {
 		go func(url, reqBody string) {
 			defer wg.Done()
@@ -73,11 +74,13 @@ func (e *Executor) ReplicateMessage(message model.Message) {
 			resp, err := e.client.Post(url+"/api/v1/replicate", "application/json", req)
 
 			if err != nil {
-				log.Printf("Failed to replicate message. Secondary url: %s, err: %s", url, err)
+				// at this stage assume that the communication channel is a perfect link (no failures and messages lost)
+				log.Fatalf("Failed to replicate message. Secondary url: %s, err: %s", url, err)
 			} else if resp.StatusCode != 200 {
-				log.Printf("Failed to replicate message. Secondary url: %s, status code: %d", url, resp.StatusCode)
+				// at this stage assume that the communication channel is a perfect link (no failures and messages lost)
+				log.Fatalf("Failed to replicate message. Secondary url: %s, status code: %d", url, resp.StatusCode)
 			} else {
-				log.Printf("ACK. Secondary url: %s", url)
+				log.Printf("ACK (message %d). Secondary url: %s\n", message.Id, url)
 			}
 		}(secondaryUrl, reqBody)
 	}
