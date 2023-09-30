@@ -8,12 +8,12 @@ def test_basic_replication(primary_url, secondary1_url, secondary2_url) -> None:
 
     # WHEN
     for message in messages:
-        is_added = append_message(PRIMARY_URL, message)
+        is_added = append_message(primary_url, message, 3)
         assert is_added, "Failed to append message: " + message
 
-    messages_primary = get_messages(PRIMARY_URL)
-    messages_secondary1 = get_messages(SECONDARY1_URL)
-    messages_secondary2 = get_messages(SECONDARY2_URL)
+    messages_primary = get_messages(primary_url)
+    messages_secondary1 = get_messages(secondary1_url)
+    messages_secondary2 = get_messages(secondary2_url)
 
     # THEN
     assert messages == messages_primary, "Incorrect messages in PRIMARY storage"
