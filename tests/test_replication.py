@@ -50,7 +50,7 @@ def test_inconsistency_and_eventual_consistency_during_replication_with_w_2(prim
     # THEN
     assert messages == messages_primary, "Incorrect messages in PRIMARY storage"
     assert messages == messages_secondary1, "Incorrect messages in SECONDARY_1 storage"
-
+    # the master and secondary should temporarily return different messages lists.
     assert [] == messages_secondary2, "Incorrect messages in SECONDARY_2 storage"
 
     # WHEN
@@ -91,7 +91,7 @@ def test_inconsistency_and_eventual_consistency_during_replication_with_w_1(prim
 
     # THEN
     assert messages == messages_primary, "Incorrect messages in PRIMARY storage"
-
+    # the master and secondaries should temporarily return different messages lists.
     assert [] == messages_secondary1, "Incorrect messages in SECONDARY_1 storage"
     assert [] == messages_secondary2, "Incorrect messages in SECONDARY_2 storage"
 
