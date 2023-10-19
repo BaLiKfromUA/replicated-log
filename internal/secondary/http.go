@@ -48,6 +48,7 @@ func (h *HttpHandler) GetMessages(rw http.ResponseWriter, _ *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusOK)
 	rawResponse, _ := json.Marshal(GetMessagesResponse{Messages: messages})
+	log.Printf("Get messages: %v", messages)
 	_, _ = rw.Write(rawResponse)
 }
 

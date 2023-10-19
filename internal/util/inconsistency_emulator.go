@@ -47,7 +47,7 @@ func (emulator *InconsistencyEmulator) BlockRequestIfNeeded() {
 func (emulator *InconsistencyEmulator) ChangeMode(shouldWait bool) {
 	emulator.mu.Lock()
 	defer emulator.mu.Unlock()
-
+	log.Printf("Inconsistency Mode: %t\n", shouldWait)
 	emulator.shouldWait = shouldWait
 
 	if !emulator.shouldWait {
@@ -57,6 +57,4 @@ func (emulator *InconsistencyEmulator) ChangeMode(shouldWait bool) {
 			emulator.waitCntCond.Wait()
 		}
 	}
-
-	log.Printf("Inconsistency Mode: %t\n", shouldWait)
 }

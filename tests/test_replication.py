@@ -1,4 +1,13 @@
+import threading
+import time
+
 from http_utility import append_message, get_messages, block_replication
+
+
+def send_messages(primary_url: str, messages: list[str], w: int) -> None:
+    for message in messages:
+        is_added = append_message(primary_url, message, w)
+        assert is_added, "Failed to append message: " + message
 
 
 def test_basic_replication(primary_url, secondary1_url, secondary2_url) -> None:
@@ -8,9 +17,7 @@ def test_basic_replication(primary_url, secondary1_url, secondary2_url) -> None:
     messages = ["msg 1", "msg 2", "msg 3", "msg 4", "msg 5"]
 
     # WHEN
-    for message in messages:
-        is_added = append_message(primary_url, message, w)
-        assert is_added, "Failed to append message: " + message
+    send_messages(primary_url, messages, w)
 
     messages_primary = get_messages(primary_url)
     messages_secondary1 = get_messages(secondary1_url)
@@ -39,9 +46,7 @@ def test_inconsistency_and_eventual_consistency_during_replication_with_w_2(prim
     is_blocked = block_replication(secondary2_url, True)
     assert is_blocked
 
-    for message in messages:
-        is_added = append_message(primary_url, message, w)
-        assert is_added, "Failed to append message: " + message
+    send_messages(primary_url, messages, w)
 
     messages_primary = get_messages(primary_url)
     messages_secondary1 = get_messages(secondary1_url)
@@ -81,9 +86,7 @@ def test_inconsistency_and_eventual_consistency_during_replication_with_w_1(prim
     is_blocked = block_replication(secondary2_url, True)
     assert is_blocked
 
-    for message in messages:
-        is_added = append_message(primary_url, message, w)
-        assert is_added, "Failed to append message: " + message
+    send_messages(primary_url, messages, w)
 
     messages_primary = get_messages(primary_url)
     messages_secondary1 = get_messages(secondary1_url)
@@ -105,4 +108,38 @@ def test_inconsistency_and_eventual_consistency_during_replication_with_w_1(prim
     messages_secondary2 = get_messages(secondary2_url)
     # THEN
     assert messages == messages_secondary1, "Incorrect messages in SECONDARY_1 storage"
+    assert messages == messages_secondary2, "Incorrect messages in SECONDARY_2 storage"
+
+
+def test_if_primary_is_blocked_in_case_of_w_less_then_number_of_available_nodes(primary_url, secondary2_url) -> None:
+    # GIVEN
+    w = 3
+    messages = ["msg 1"]
+
+    # WHEN
+    is_blocked = block_replication(secondary2_url, True)
+    assert is_blocked
+
+    adding_thread = threading.Thread(target=send_messages, args=(primary_url, messages, w))
+
+    adding_thread.start()
+    # hack to trigger current_thread.yield()
+    # taken from https://stackoverflow.com/a/787810
+    time.sleep(0.2)
+
+    messages_secondary2 = get_messages(secondary2_url)
+
+    # THEN
+    assert [] == messages_secondary2, "Incorrect messages in SECONDARY_2 storage"
+    assert adding_thread.is_alive()  # request is still blocked
+
+    # WHEN
+    is_unblocked = block_replication(secondary2_url, False)
+    assert is_unblocked
+
+    adding_thread.join()  # wait for primary unblocking
+    messages_secondary2 = get_messages(secondary2_url)
+
+    # THEN
+    assert not adding_thread.is_alive()
     assert messages == messages_secondary2, "Incorrect messages in SECONDARY_2 storage"

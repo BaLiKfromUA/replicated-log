@@ -3,6 +3,7 @@ package primary
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 	"os"
 	"replicated-log/internal/replication"
@@ -35,6 +36,8 @@ func (h *HttpHandler) AppendMessage(rw http.ResponseWriter, r *http.Request) {
 
 	message := h.storage.AddRawMessage(payload.Message)
 	h.executor.ReplicateMessage(message, payload.W-1)
+
+	log.Printf("Replication of message %d is done!\n", message.Id)
 	rw.WriteHeader(http.StatusOK)
 }
 
@@ -44,6 +47,8 @@ func (h *HttpHandler) GetMessages(rw http.ResponseWriter, _ *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusOK)
 	rawResponse, _ := json.Marshal(GetMessagesResponse{Messages: messages})
+
+	log.Printf("Get messages: %v", messages)
 	_, _ = rw.Write(rawResponse)
 }
 
