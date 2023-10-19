@@ -25,3 +25,13 @@ def clean_storage(url: str) -> bool:
     resp = requests.post(url=url + "/api/test/clean")
     print(resp)
     return resp.status_code == 200
+
+
+def block_replication(url: str, block: bool) -> bool:
+    data = {
+        "enable": block
+    }
+    headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+    resp = requests.post(url=url + "/api/test/replication_block", json=data, headers=headers)
+    print(resp)
+    return resp.status_code == 200
