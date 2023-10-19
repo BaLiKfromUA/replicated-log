@@ -46,7 +46,7 @@ services:
     environment:
       - PRIMARY_URL=http://primary:8080
       - SECONDARY1_URL=http://secondary1:8000
-      - SECONDARY2_URL=http://secondary1:8000
+      - SECONDARY2_URL=http://secondary2:8000
 
 networks:
   isolated_network:
