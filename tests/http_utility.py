@@ -35,3 +35,9 @@ def block_replication(url: str, block: bool) -> bool:
     resp = requests.post(url=url + "/api/test/replication_block", json=data, headers=headers)
     print(resp)
     return resp.status_code == 200
+
+
+def send_messages(primary_url: str, messages: list[str], w: int) -> None:
+    for message in messages:
+        is_added = append_message(primary_url, message, w)
+        assert is_added, "Failed to append message: " + message

@@ -9,6 +9,7 @@ import (
 	"os"
 	"replicated-log/internal/model"
 	"strings"
+	"time"
 )
 
 type Executor struct {
@@ -54,7 +55,9 @@ func NewExecutor() *Executor {
 
 	}
 
-	return &Executor{secondaryUrls: secondaryUrls, client: http.Client{}}
+	return &Executor{secondaryUrls: secondaryUrls, client: http.Client{
+		Timeout: 1 * time.Second, // todo: set flexible with env variable
+	}}
 }
 
 func (e *Executor) ReplicateMessage(message model.Message, w int) {
