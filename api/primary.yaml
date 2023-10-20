@@ -14,6 +14,8 @@ paths:
               properties:
                 message:
                   type: string
+                w:
+                  type: integer
       responses:
         200:
           description: Message is successfully appended
@@ -31,3 +33,9 @@ paths:
                     type: array
                     items:
                       type: string
+  /api/test/clean:
+    description: "Clean database. Use only for system testing"
+    post:
+      responses:
+        200:
+          description: Success

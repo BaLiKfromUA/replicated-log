@@ -9,7 +9,6 @@ import (
 	"os"
 	"replicated-log/internal/model"
 	"strings"
-	"sync"
 )
 
 type Executor struct {
@@ -58,20 +57,23 @@ func NewExecutor() *Executor {
 	return &Executor{secondaryUrls: secondaryUrls, client: http.Client{}}
 }
 
-func (e *Executor) ReplicateMessage(message model.Message) {
+func (e *Executor) ReplicateMessage(message model.Message, w int) {
 	payload, _ := json.Marshal(message)
 	reqBody := string(payload)
 
-	var wg sync.WaitGroup
-	wg.Add(len(e.secondaryUrls))
+	if w > len(e.secondaryUrls) {
+		log.Fatalf("w > primaries number, %d > %d", w, len(e.secondaryUrls))
+	}
+
+	// Buffered channels allows to accept a limited number of values without a corresponding receiver for those values
+	replicationIsFinished := make(chan struct{}, len(e.secondaryUrls))
 
 	log.Printf("Replicating message %d\n", message.Id)
 	for _, secondaryUrl := range e.secondaryUrls {
 		go func(url, reqBody string) {
-			defer wg.Done()
 
 			req := io.NopCloser(strings.NewReader(reqBody))
-			resp, err := e.client.Post(url+"/api/v1/replicate", "application/json", req)
+			resp, err := e.client.Post(url+"/api/v1/internal/replicate", "application/json", req)
 
 			if err != nil {
 				// at this stage assume that the communication channel is a perfect link (no failures and messages lost)
@@ -81,9 +83,13 @@ func (e *Executor) ReplicateMessage(message model.Message) {
 				log.Fatalf("Failed to replicate message. Secondary url: %s, status code: %d", url, resp.StatusCode)
 			} else {
 				log.Printf("ACK (message %d). Secondary url: %s\n", message.Id, url)
+				replicationIsFinished <- struct{}{}
 			}
 		}(secondaryUrl, reqBody)
 	}
 
-	wg.Wait()
+	for w > 0 {
+		<-replicationIsFinished
+		w--
+	}
 }

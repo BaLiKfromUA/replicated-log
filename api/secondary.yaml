@@ -19,7 +19,7 @@ components:
           type: string
           nullable: false
 paths:
-  /api/v1/replicate:
+  /api/v1/internal/replicate:
     post:
       requestBody:
         content:
@@ -43,3 +43,26 @@ paths:
                     type: array
                     items:
                       type: string
+  /api/test/clean:
+    description: "Clean database. Use only for system testing"
+    post:
+      responses:
+        200:
+          description: Success
+  /api/test/replication_block:
+    description: "Enable or disable the replication on secondary side.
+    `enable` set to true blocks all `replicate` requests.
+    If `enable` is false then this request will be blocked till all `replicate` requests are unblocked.
+    Use only for system testing to emulate delays or failures"
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enable:
+                  type: boolean
+      responses:
+        200:
+          description: Success

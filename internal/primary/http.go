@@ -3,6 +3,7 @@ package primary
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"log"
 	"net/http"
 	"os"
 	"replicated-log/internal/replication"
@@ -17,6 +18,7 @@ type HttpHandler struct {
 
 type AppendMessageRequest struct {
 	Message string `json:"message"`
+	W       int    `json:"w"`
 }
 
 type GetMessagesResponse struct {
@@ -33,27 +35,34 @@ func (h *HttpHandler) AppendMessage(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	message := h.storage.AddRawMessage(payload.Message)
-	h.executor.ReplicateMessage(message)
+	h.executor.ReplicateMessage(message, payload.W-1)
+
+	log.Printf("Replication of message %d is done!\n", message.Id)
 	rw.WriteHeader(http.StatusOK)
 }
 
 func (h *HttpHandler) GetMessages(rw http.ResponseWriter, _ *http.Request) {
 	messages := h.storage.GetMessages()
-	if messages == nil {
-		messages = []string{}
-	}
 
 	rw.Header().Set("Content-Type", "application/json")
 	rw.WriteHeader(http.StatusOK)
 	rawResponse, _ := json.Marshal(GetMessagesResponse{Messages: messages})
+
+	log.Printf("Get messages: %v", messages)
 	_, _ = rw.Write(rawResponse)
+}
+
+func (h *HttpHandler) CleanStorage(rw http.ResponseWriter, _ *http.Request) {
+	h.storage.Clear()
+	rw.WriteHeader(http.StatusOK)
 }
 
 func createRouter(handler *HttpHandler) *mux.Router {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/api/v1/append", handler.AppendMessage).Methods(http.MethodPost)
-	r.HandleFunc("/api/v1/messages", handler.GetMessages)
+	r.HandleFunc("/api/v1/messages", handler.GetMessages).Methods(http.MethodGet)
+	r.HandleFunc("/api/test/clean", handler.CleanStorage).Methods(http.MethodPost)
 
 	return r
 }

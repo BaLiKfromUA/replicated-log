@@ -6,7 +6,7 @@ Distributed system for basic logs replication. Primary-secondary push model.
 
 The Replicated Log should have the following deployment architecture: one **Primary** and any number of **Secondaries**.
 
-![](docs/img/iteration_1.png)
+![](docs/img/iteration_2.png)
 
 **Master** should expose a simple HTTP server (or alternative service with a similar API) with:
 - _POST method_ - appends a message into the in-memory list
@@ -18,12 +18,20 @@ The Replicated Log should have the following deployment architecture: one **Prim
 Properties and assumptions:
 - after each POST request, the message should be replicated on every Secondary server
 - Master should ensure that Secondaries have received a message via ACK
-- Master’s POST request should be finished only after receiving ACKs from all Secondaries (blocking replication approach)
-- to test that the replication is blocking, introduce the delay/sleep on the Secondary
 - at this stage assume that the communication channel is a perfect link (no failures and messages lost)
 - any RPC framework can be used for Master-Secondary communication (Sockets, language-specific RPC, HTTP, Rest, gRPC, …)
 - your implementation should support logging
 - Master and Secondaries should run in Docker
+
+Current iteration should provide tunable semi-synchronicity for replication, by defining write concern parameters.
+- client POST request in addition to the message should also contain write concern parameter w=1,2,3,..,n
+- w value specifies how many ACKs the master should receive from secondaries before responding to the client
+  - w = 1 - only from master
+  - w = 2 - from master and one secondary
+  - w = 3 - from master and two secondaries
+
+Please emulate replicas inconsistency (and eventual consistency) with the master by introducing the artificial delay on the secondary node. In this case, the master and secondary should temporarily return different messages lists.
+Add logic for messages deduplication and to guarantee the total ordering of messages.
 
 
 ### How to run
