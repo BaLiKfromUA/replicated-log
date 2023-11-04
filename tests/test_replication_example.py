@@ -1,7 +1,7 @@
 from http_utility import send_messages, get_messages
 
 
-def test_basic_replication(primary_url, secondary1_url, secondary2_url) -> None:
+def test_basic_replication_example(primary_url, secondary1_url, secondary2_url) -> None:
     """simple test to ensure that whole system works as expected from 1 iteration"""
     # GIVEN
     w = 3
