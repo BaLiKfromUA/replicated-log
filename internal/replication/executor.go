@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"replicated-log/internal/model"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -17,7 +18,8 @@ import (
 type Executor struct {
 	secondaryUrls []string
 	// Clients are safe for concurrent use by multiple goroutines. https://go.dev/src/net/http/client.go
-	client           http.Client
+	client http.Client
+	// retry config
 	initialSleepTime time.Duration
 	sleepMultiplier  int
 	// jitter config
@@ -62,20 +64,26 @@ func NewExecutor() *Executor {
 
 	}
 
-	// todo: set flexible with env variable
+	replicationTimeout := 50 * time.Millisecond // default value
+	if replicationTimeoutToken, okTimeout := os.LookupEnv("REPLICATION_TIMEOUT_MILLISECONDS"); okTimeout {
+		value, _ := strconv.Atoi(replicationTimeoutToken)
+		replicationTimeout = time.Duration(value) * time.Millisecond
+	}
 
-	initialSleepTime := 10 * time.Millisecond
+	initialSleepTime := 10 * time.Millisecond // default value
 	intervalValue := int64(initialSleepTime) / 2
 
 	return &Executor{
 		secondaryUrls: secondaryUrls,
 		client: http.Client{
-			Timeout: 1 * time.Second,
+			Timeout: replicationTimeout,
 		},
+		// retry config
 		initialSleepTime: initialSleepTime,
 		sleepMultiplier:  2,
-		maxInterval:      intervalValue,
-		minInterval:      -intervalValue,
+		// jitter config
+		maxInterval: intervalValue,
+		minInterval: -intervalValue,
 	}
 }
 
@@ -115,8 +123,8 @@ func (e *Executor) replicateWithRetry(secondaryUrl string, message model.Message
 			log.Printf("Failed to replicate message. Secondary url: %s, status code: %d", secondaryUrl, resp.StatusCode)
 		} else {
 			log.Printf("ACK (message %d). Secondary url: %s\n", message.Id, secondaryUrl)
+			// SUCCESS! Notify main thread and exit...
 			notify <- struct{}{}
-			// SUCCESS!
 			return
 		}
 

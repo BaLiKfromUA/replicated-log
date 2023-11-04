@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"replicated-log/internal/model"
 	"testing"
+	"time"
 )
 
 func TestReplicateMessageWithOneSecondary(t *testing.T) {
@@ -108,6 +109,46 @@ func TestReplicateWithRetrySendsSameRequestEveryTimeAndNotifiesAboutSuccess(t *t
 
 	// just for successful initialization, doesn't play role in this test:
 	t.Setenv("SECONDARY_URLS", secondary.URL)
+
+	success := make(chan struct{}, 1)
+
+	// WHEN
+	NewExecutor().replicateWithRetry(secondary.URL, message, success)
+
+	// THEN
+	<-success // block till notification
+	require.Equal(t, currentTrial, maxTrials)
+}
+
+func TestReplicateWithRetryWorksCorrectWithClientTimeout(t *testing.T) {
+	// GIVEN
+	message := model.Message{Id: 0, Message: "first one"}
+	maxTrials := 3
+	currentTrial := 0
+
+	handler := func(rw http.ResponseWriter, r *http.Request) {
+		var actualMessage model.Message
+		err := json.NewDecoder(r.Body).Decode(&actualMessage)
+		// THEN
+		require.NoError(t, err)
+		require.Equal(t, message, actualMessage)
+
+		if currentTrial < maxTrials {
+			// !!! Sleep time is much bigger than request timeout
+			time.Sleep(50 * time.Millisecond)
+			currentTrial++
+		}
+
+		rw.WriteHeader(http.StatusOK)
+	}
+
+	secondary := httptest.NewServer(http.HandlerFunc(handler))
+	defer secondary.Close()
+
+	// just for successful initialization, doesn't play role in this test:
+	t.Setenv("SECONDARY_URLS", secondary.URL)
+	// Client timeout is very small
+	t.Setenv("REPLICATION_TIMEOUT_MILLISECONDS", "10")
 
 	success := make(chan struct{}, 1)
 
