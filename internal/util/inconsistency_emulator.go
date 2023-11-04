@@ -58,3 +58,10 @@ func (emulator *InconsistencyEmulator) ChangeMode(shouldWait bool) {
 		}
 	}
 }
+
+func (emulator *InconsistencyEmulator) IsShouldWait() bool {
+	emulator.mu.Lock()
+	defer emulator.mu.Unlock()
+
+	return emulator.shouldWait
+}

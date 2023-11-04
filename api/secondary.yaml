@@ -43,6 +43,12 @@ paths:
                     type: array
                     items:
                       type: string
+  /api/v1/healthcheck:
+    description: "Simple healthcheck mechanism to make retry logic smarter"
+    get:
+      responses:
+        200:
+          description: All good!
   /api/test/clean:
     description: "Clean database. Use only for system testing"
     post:

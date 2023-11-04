@@ -68,11 +68,21 @@ func (h *HttpHandler) SwitchReplicationMode(rw http.ResponseWriter, r *http.Requ
 	rw.WriteHeader(http.StatusOK)
 }
 
+func (h *HttpHandler) HealthCheck(rw http.ResponseWriter, _ *http.Request) {
+	if h.emulator.IsShouldWait() {
+		rw.WriteHeader(http.StatusNotAcceptable)
+	} else {
+		rw.WriteHeader(http.StatusOK)
+	}
+}
+
 func createRouter(handler *HttpHandler) *mux.Router {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/api/v1/internal/replicate", handler.ReplicateMessage).Methods(http.MethodPost)
 	r.HandleFunc("/api/v1/messages", handler.GetMessages).Methods(http.MethodGet)
+	r.HandleFunc("/api/v1/healthcheck", handler.HealthCheck).Methods(http.MethodGet)
+
 	r.HandleFunc("/api/test/clean", handler.CleanStorage).Methods(http.MethodPost)
 	r.HandleFunc("/api/test/replication_block", handler.SwitchReplicationMode).Methods(http.MethodPost)
 
