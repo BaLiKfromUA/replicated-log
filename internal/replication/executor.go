@@ -87,7 +87,6 @@ func (e *Executor) ReplicateMessage(message model.Message, w int) {
 	// Buffered channels allows to accept a limited number of values without a corresponding receiver for those values
 	replicationIsFinished := make(chan struct{}, len(e.secondaryUrls))
 
-	log.Printf("Replicating message %d\n", message.Id)
 	for _, secondaryUrl := range e.secondaryUrls {
 		go e.replicateWithRetry(secondaryUrl, message, replicationIsFinished)
 	}
@@ -102,31 +101,37 @@ func (e *Executor) replicateWithRetry(secondaryUrl string, message model.Message
 	payload, _ := json.Marshal(message)
 	reqBody := string(payload)
 
-	failures := 0
-
-	var currentSleepTime time.Duration
-	for {
-		randomInterval := time.Duration(rand.Int63n(e.maxInterval-e.minInterval) + e.minInterval)
-		multiplierPowN := time.Duration(math.Pow(float64(e.sleepMultiplier), float64(failures)))
-		// wait_interval = (base * multiplier^n) +/- (random interval)
-		currentSleepTime = (e.initialSleepTime * multiplierPowN) + randomInterval
-
+	// WHILE NOT SUCCESS:
+	for attempt := 0; ; attempt++ {
+		// 1) Send Request
 		req := io.NopCloser(strings.NewReader(reqBody))
-		log.Printf("Sending message %d to %s. Attempt %d.", message.Id, secondaryUrl, failures)
+		log.Printf("Sending message %d to %s. Attempt %d.", message.Id, secondaryUrl, attempt)
 		resp, err := e.client.Post(secondaryUrl+"/api/v1/internal/replicate", "application/json", req)
 
+		// 2) Handle Response
 		if err != nil {
-			log.Printf("Failed to replicate message. Secondary url: %s, err: %s", secondaryUrl, err)
+			log.Printf("Failed to replicate message. Err: %s", err)
 		} else if resp.StatusCode != 200 {
 			log.Printf("Failed to replicate message. Secondary url: %s, status code: %d", secondaryUrl, resp.StatusCode)
 		} else {
 			log.Printf("ACK (message %d). Secondary url: %s\n", message.Id, secondaryUrl)
 			notify <- struct{}{}
+			// SUCCESS!
 			return
 		}
-		failures += 1
 
+		// 3) Sleep in case of Failure or DEAD Secondary
+		currentSleepTime := e.calculateCurrentSleepTime(attempt)
 		log.Printf("Sleeping %v ms before next retry...", currentSleepTime)
 		time.Sleep(currentSleepTime)
 	}
+}
+
+// wait_interval = (base * multiplier^n) +/- (random interval)
+func (e *Executor) calculateCurrentSleepTime(failures int) time.Duration {
+	randomInterval := time.Duration(rand.Int63n(e.maxInterval-e.minInterval) + e.minInterval)
+	multiplierPowN := time.Duration(math.Pow(float64(e.sleepMultiplier), float64(failures)))
+
+	waitInterval := (e.initialSleepTime * multiplierPowN) + randomInterval
+	return waitInterval
 }
