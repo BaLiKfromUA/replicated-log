@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io"
 	"log"
+	"math"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,7 +17,12 @@ import (
 type Executor struct {
 	secondaryUrls []string
 	// Clients are safe for concurrent use by multiple goroutines. https://go.dev/src/net/http/client.go
-	client http.Client
+	client           http.Client
+	initialSleepTime time.Duration
+	sleepMultiplier  int
+	// jitter config
+	minInterval int64
+	maxInterval int64
 }
 
 // isValidUrl tests a string to determine if it is a well-structured url or not.
@@ -55,15 +62,24 @@ func NewExecutor() *Executor {
 
 	}
 
-	return &Executor{secondaryUrls: secondaryUrls, client: http.Client{
-		Timeout: 1 * time.Second, // todo: set flexible with env variable
-	}}
+	// todo: set flexible with env variable
+
+	initialSleepTime := 10 * time.Millisecond
+	intervalValue := int64(initialSleepTime) / 2
+
+	return &Executor{
+		secondaryUrls: secondaryUrls,
+		client: http.Client{
+			Timeout: 1 * time.Second,
+		},
+		initialSleepTime: initialSleepTime,
+		sleepMultiplier:  2,
+		maxInterval:      intervalValue,
+		minInterval:      -intervalValue,
+	}
 }
 
 func (e *Executor) ReplicateMessage(message model.Message, w int) {
-	payload, _ := json.Marshal(message)
-	reqBody := string(payload)
-
 	if w > len(e.secondaryUrls) {
 		log.Fatalf("w > primaries number, %d > %d", w, len(e.secondaryUrls))
 	}
@@ -73,26 +89,44 @@ func (e *Executor) ReplicateMessage(message model.Message, w int) {
 
 	log.Printf("Replicating message %d\n", message.Id)
 	for _, secondaryUrl := range e.secondaryUrls {
-		go func(url, reqBody string) {
-
-			req := io.NopCloser(strings.NewReader(reqBody))
-			resp, err := e.client.Post(url+"/api/v1/internal/replicate", "application/json", req)
-
-			if err != nil {
-				// at this stage assume that the communication channel is a perfect link (no failures and messages lost)
-				log.Fatalf("Failed to replicate message. Secondary url: %s, err: %s", url, err)
-			} else if resp.StatusCode != 200 {
-				// at this stage assume that the communication channel is a perfect link (no failures and messages lost)
-				log.Fatalf("Failed to replicate message. Secondary url: %s, status code: %d", url, resp.StatusCode)
-			} else {
-				log.Printf("ACK (message %d). Secondary url: %s\n", message.Id, url)
-				replicationIsFinished <- struct{}{}
-			}
-		}(secondaryUrl, reqBody)
+		go e.replicateWithRetry(secondaryUrl, message, replicationIsFinished)
 	}
 
 	for w > 0 {
 		<-replicationIsFinished
 		w--
+	}
+}
+
+func (e *Executor) replicateWithRetry(secondaryUrl string, message model.Message, notify chan<- struct{}) {
+	payload, _ := json.Marshal(message)
+	reqBody := string(payload)
+
+	failures := 0
+
+	var currentSleepTime time.Duration
+	for {
+		randomInterval := time.Duration(rand.Int63n(e.maxInterval-e.minInterval) + e.minInterval)
+		multiplierPowN := time.Duration(math.Pow(float64(e.sleepMultiplier), float64(failures)))
+		// wait_interval = (base * multiplier^n) +/- (random interval)
+		currentSleepTime = (e.initialSleepTime * multiplierPowN) + randomInterval
+
+		req := io.NopCloser(strings.NewReader(reqBody))
+		log.Printf("Sending message %d to %s. Attempt %d.", message.Id, secondaryUrl, failures)
+		resp, err := e.client.Post(secondaryUrl+"/api/v1/internal/replicate", "application/json", req)
+
+		if err != nil {
+			log.Printf("Failed to replicate message. Secondary url: %s, err: %s", secondaryUrl, err)
+		} else if resp.StatusCode != 200 {
+			log.Printf("Failed to replicate message. Secondary url: %s, status code: %d", secondaryUrl, resp.StatusCode)
+		} else {
+			log.Printf("ACK (message %d). Secondary url: %s\n", message.Id, secondaryUrl)
+			notify <- struct{}{}
+			return
+		}
+		failures += 1
+
+		log.Printf("Sleeping %v ms before next retry...", currentSleepTime)
+		time.Sleep(currentSleepTime)
 	}
 }
