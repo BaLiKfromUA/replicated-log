@@ -46,7 +46,8 @@ func NewHealthCheckMonitoringDaemon(urls []string) *HealthCheckMonitoringDaemon 
 
 func (daemon *HealthCheckMonitoringDaemon) StartHealthCheck() {
 	log.Printf("[HEALTH-CHECK] START health check background thread")
-	ticker := time.NewTicker(100 * time.Millisecond)
+	ticker := time.NewTicker(500 * time.Millisecond)
+	// todo: maybe add backoff???
 	go func() {
 		for {
 			select {
