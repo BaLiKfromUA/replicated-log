@@ -25,6 +25,8 @@ type Executor struct {
 	// jitter config
 	minInterval int64
 	maxInterval int64
+	// healthcheck
+	health *HealthCheckMonitoringDaemon
 }
 
 // isValidUrl tests a string to determine if it is a well-structured url or not.
@@ -73,7 +75,7 @@ func NewExecutor() *Executor {
 	initialSleepTime := 10 * time.Millisecond // default value
 	intervalValue := int64(initialSleepTime) / 2
 
-	return &Executor{
+	executor := Executor{
 		secondaryUrls: secondaryUrls,
 		client: http.Client{
 			Timeout: replicationTimeout,
@@ -84,7 +86,13 @@ func NewExecutor() *Executor {
 		// jitter config
 		maxInterval: intervalValue,
 		minInterval: -intervalValue,
+		health:      NewHealthCheckMonitoringDaemon(secondaryUrls),
 	}
+
+	// start daemon thread
+	executor.health.StartHealthCheck()
+
+	return &executor
 }
 
 func (e *Executor) ReplicateMessage(message model.Message, w int) {
@@ -105,32 +113,42 @@ func (e *Executor) ReplicateMessage(message model.Message, w int) {
 	}
 }
 
+func (e *Executor) Close() {
+	e.health.StopHealthCheck()
+}
+
 func (e *Executor) replicateWithRetry(secondaryUrl string, message model.Message, notify chan<- struct{}) {
 	payload, _ := json.Marshal(message)
 	reqBody := string(payload)
 
 	// WHILE NOT SUCCESS:
 	for attempt := 0; ; attempt++ {
-		// 1) Send Request
-		req := io.NopCloser(strings.NewReader(reqBody))
-		log.Printf("Sending message %d to %s. Attempt %d.", message.Id, secondaryUrl, attempt)
-		resp, err := e.client.Post(secondaryUrl+"/api/v1/internal/replicate", "application/json", req)
 
-		// 2) Handle Response
-		if err != nil {
-			log.Printf("Failed to replicate message. Err: %s", err)
-		} else if resp.StatusCode != 200 {
-			log.Printf("Failed to replicate message. Secondary url: %s, status code: %d", secondaryUrl, resp.StatusCode)
+		// 0) Check if Secondary is ALIVE
+		if e.health.GetStatus(secondaryUrl) == ALIVE {
+			// 1) Send Request
+			req := io.NopCloser(strings.NewReader(reqBody))
+			log.Printf("[EXECUTOR] Sending message %d to %s. Attempt %d.", message.Id, secondaryUrl, attempt)
+			resp, err := e.client.Post(secondaryUrl+"/api/v1/internal/replicate", "application/json", req)
+
+			// 2) Handle Response
+			if err != nil {
+				log.Printf("[EXECUTOR] Failed to replicate message. Err: %s", err)
+			} else if resp.StatusCode != 200 {
+				log.Printf("[EXECUTOR] Failed to replicate message. Secondary url: %s, status code: %d", secondaryUrl, resp.StatusCode)
+			} else {
+				log.Printf("[EXECUTOR] ACK (message %d). Secondary url: %s\n", message.Id, secondaryUrl)
+				// SUCCESS! Notify main thread and exit...
+				notify <- struct{}{}
+				return
+			}
 		} else {
-			log.Printf("ACK (message %d). Secondary url: %s\n", message.Id, secondaryUrl)
-			// SUCCESS! Notify main thread and exit...
-			notify <- struct{}{}
-			return
+			log.Printf("[EXECUTOR] %s is DEAD", secondaryUrl)
 		}
 
 		// 3) Sleep in case of Failure or DEAD Secondary
 		currentSleepTime := e.calculateCurrentSleepTime(attempt)
-		log.Printf("Sleeping %v ms before next retry...", currentSleepTime)
+		log.Printf("[EXECUTOR] Sleeping %v ms before next retry...", currentSleepTime)
 		time.Sleep(currentSleepTime)
 	}
 }

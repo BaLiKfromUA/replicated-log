@@ -85,5 +85,9 @@ func NewPrimaryServer() *http.Server {
 		ReadTimeout:  15 * time.Second,
 	}
 
+	srv.RegisterOnShutdown(func() {
+		handler.executor.Close()
+	})
+
 	return srv
 }
