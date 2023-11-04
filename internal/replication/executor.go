@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"replicated-log/internal/healthcheck"
 	"replicated-log/internal/model"
 	"strconv"
 	"strings"
@@ -26,7 +27,7 @@ type Executor struct {
 	minInterval int64
 	maxInterval int64
 	// healthcheck
-	health *HealthCheckMonitoringDaemon
+	health *healthcheck.MonitoringDaemon
 }
 
 // isValidUrl tests a string to determine if it is a well-structured url or not.
@@ -86,7 +87,7 @@ func NewExecutor() *Executor {
 		// jitter config
 		maxInterval: intervalValue,
 		minInterval: -intervalValue,
-		health:      NewHealthCheckMonitoringDaemon(secondaryUrls),
+		health:      healthcheck.NewMonitoringDaemon(secondaryUrls),
 	}
 
 	// start daemon thread
@@ -125,7 +126,7 @@ func (e *Executor) replicateWithRetry(secondaryUrl string, message model.Message
 	for attempt := 0; ; attempt++ {
 
 		// 0) Check if Secondary is ALIVE
-		if e.health.GetStatus(secondaryUrl) == ALIVE {
+		if e.health.GetStatus(secondaryUrl) == healthcheck.ALIVE {
 			// 1) Send Request
 			req := io.NopCloser(strings.NewReader(reqBody))
 			log.Printf("[EXECUTOR] Sending message %d to %s. Attempt %d.", message.Id, secondaryUrl, attempt)

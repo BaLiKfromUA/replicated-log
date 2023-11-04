@@ -1,4 +1,4 @@
-package replication
+package healthcheck
 
 import (
 	"log"
@@ -14,7 +14,7 @@ const (
 	DEAD  = "DEAD"
 )
 
-type HealthCheckMonitoringDaemon struct {
+type MonitoringDaemon struct {
 	mu                *sync.Mutex
 	secondaryUrls     []string
 	secondaryStatuses map[string]string
@@ -22,14 +22,14 @@ type HealthCheckMonitoringDaemon struct {
 	quit              chan struct{}
 }
 
-func NewHealthCheckMonitoringDaemon(urls []string) *HealthCheckMonitoringDaemon {
+func NewMonitoringDaemon(urls []string) *MonitoringDaemon {
 	replicationTimeout := 50 * time.Millisecond // default value
 	if replicationTimeoutToken, okTimeout := os.LookupEnv("REPLICATION_TIMEOUT_MILLISECONDS"); okTimeout {
 		value, _ := strconv.Atoi(replicationTimeoutToken)
 		replicationTimeout = time.Duration(value) * time.Millisecond
 	}
 
-	daemon := HealthCheckMonitoringDaemon{
+	daemon := MonitoringDaemon{
 		mu:                &sync.Mutex{},
 		secondaryUrls:     urls,
 		secondaryStatuses: make(map[string]string),
@@ -44,7 +44,7 @@ func NewHealthCheckMonitoringDaemon(urls []string) *HealthCheckMonitoringDaemon 
 	return &daemon
 }
 
-func (daemon *HealthCheckMonitoringDaemon) StartHealthCheck() {
+func (daemon *MonitoringDaemon) StartHealthCheck() {
 	log.Printf("[HEALTH-CHECK] START health check background thread")
 	ticker := time.NewTicker(500 * time.Millisecond)
 	// todo: maybe add backoff???
@@ -61,12 +61,12 @@ func (daemon *HealthCheckMonitoringDaemon) StartHealthCheck() {
 	}()
 }
 
-func (daemon *HealthCheckMonitoringDaemon) StopHealthCheck() {
+func (daemon *MonitoringDaemon) StopHealthCheck() {
 	log.Printf("[HEALTH-CHECK] FINISH health check background thread")
 	close(daemon.quit)
 }
 
-func (daemon *HealthCheckMonitoringDaemon) doHealthCheck(isInit bool) {
+func (daemon *MonitoringDaemon) doHealthCheck(isInit bool) {
 	log.Printf("[HEALTH-CHECK] Run periodic health check...")
 
 	for _, url := range daemon.secondaryUrls {
@@ -80,7 +80,7 @@ func (daemon *HealthCheckMonitoringDaemon) doHealthCheck(isInit bool) {
 	}
 }
 
-func (daemon *HealthCheckMonitoringDaemon) checkHealth(secondaryUrl string) {
+func (daemon *MonitoringDaemon) checkHealth(secondaryUrl string) {
 	resp, err := daemon.client.Get(secondaryUrl + "/api/v1/healthcheck")
 
 	daemon.mu.Lock()
@@ -94,7 +94,7 @@ func (daemon *HealthCheckMonitoringDaemon) checkHealth(secondaryUrl string) {
 	log.Printf("[HEALTH-CHECK] %s status: %s", secondaryUrl, daemon.secondaryStatuses[secondaryUrl])
 }
 
-func (daemon *HealthCheckMonitoringDaemon) GetStatus(url string) string {
+func (daemon *MonitoringDaemon) GetStatus(url string) string {
 	daemon.mu.Lock()
 	defer daemon.mu.Unlock()
 
