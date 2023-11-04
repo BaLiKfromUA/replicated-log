@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"replicated-log/internal/model"
+	"sync"
 	"testing"
 	"time"
 )
@@ -125,6 +126,7 @@ func TestReplicateWithRetryWorksCorrectWithClientTimeout(t *testing.T) {
 	message := model.Message{Id: 0, Message: "first one"}
 	maxTrials := 3
 	currentTrial := 0
+	var mu sync.Mutex
 
 	handler := func(rw http.ResponseWriter, r *http.Request) {
 		var actualMessage model.Message
@@ -133,12 +135,15 @@ func TestReplicateWithRetryWorksCorrectWithClientTimeout(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, message, actualMessage)
 
+		mu.Lock()
 		if currentTrial < maxTrials {
 			// !!! Sleep time is much bigger than request timeout
-			time.Sleep(50 * time.Millisecond)
 			currentTrial++
+			mu.Unlock()
+			time.Sleep(50 * time.Millisecond)
+		} else {
+			mu.Unlock()
 		}
-
 		rw.WriteHeader(http.StatusOK)
 	}
 
