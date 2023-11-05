@@ -178,7 +178,7 @@ func TestReplicateWithRetryWorksCorrectWithClientTimeout(t *testing.T) {
 	// just for successful initialization, doesn't play role in this test:
 	t.Setenv("SECONDARY_URLS", secondary.URL)
 	// Client timeout is very small
-	t.Setenv("REPLICATION_TIMEOUT_MILLISECONDS", "10")
+	t.Setenv("REQUEST_TIMEOUT_MILLISECONDS", "10")
 
 	success := make(chan struct{}, 1)
 

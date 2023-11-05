@@ -23,10 +23,10 @@ type MonitoringDaemon struct {
 }
 
 func NewMonitoringDaemon(urls []string) *MonitoringDaemon {
-	replicationTimeout := 50 * time.Millisecond // default value
-	if replicationTimeoutToken, okTimeout := os.LookupEnv("REPLICATION_TIMEOUT_MILLISECONDS"); okTimeout {
-		value, _ := strconv.Atoi(replicationTimeoutToken)
-		replicationTimeout = time.Duration(value) * time.Millisecond
+	requestTimeout := 50 * time.Millisecond // default value
+	if requestTimeoutToken, okTimeout := os.LookupEnv("REQUEST_TIMEOUT_MILLISECONDS"); okTimeout {
+		value, _ := strconv.Atoi(requestTimeoutToken)
+		requestTimeout = time.Duration(value) * time.Millisecond
 	}
 
 	daemon := MonitoringDaemon{
@@ -34,7 +34,7 @@ func NewMonitoringDaemon(urls []string) *MonitoringDaemon {
 		secondaryUrls:     urls,
 		secondaryStatuses: make(map[string]string),
 		client: http.Client{
-			Timeout: replicationTimeout,
+			Timeout: requestTimeout,
 		},
 		quit: make(chan struct{}, 1),
 	}
@@ -47,7 +47,6 @@ func NewMonitoringDaemon(urls []string) *MonitoringDaemon {
 func (daemon *MonitoringDaemon) StartHealthCheck() {
 	log.Printf("[HEALTH-CHECK] START health check background thread")
 	ticker := time.NewTicker(500 * time.Millisecond)
-	// todo: maybe add backoff???
 	go func() {
 		for {
 			select {

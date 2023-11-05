@@ -67,10 +67,10 @@ func NewExecutor() *Executor {
 
 	}
 
-	replicationTimeout := 50 * time.Millisecond // default value
-	if replicationTimeoutToken, okTimeout := os.LookupEnv("REPLICATION_TIMEOUT_MILLISECONDS"); okTimeout {
-		value, _ := strconv.Atoi(replicationTimeoutToken)
-		replicationTimeout = time.Duration(value) * time.Millisecond
+	requestTimeout := 50 * time.Millisecond // default value
+	if requestTimeoutToken, okTimeout := os.LookupEnv("REQUEST_TIMEOUT_MILLISECONDS"); okTimeout {
+		value, _ := strconv.Atoi(requestTimeoutToken)
+		requestTimeout = time.Duration(value) * time.Millisecond
 	}
 
 	initialSleepTime := 10 * time.Millisecond // default value
@@ -79,7 +79,7 @@ func NewExecutor() *Executor {
 	executor := Executor{
 		secondaryUrls: secondaryUrls,
 		client: http.Client{
-			Timeout: replicationTimeout,
+			Timeout: requestTimeout,
 		},
 		// retry config
 		initialSleepTime: initialSleepTime,
