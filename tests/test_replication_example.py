@@ -51,7 +51,7 @@ def test_iteration3_example(primary_url, secondary2_url) -> None:
     adding_thread = threading.Thread(target=append_message, args=(primary_url, "Msg3", 3))
 
     adding_thread.start()
-    # hack to trigger current_thread.yield()
+    # hack to trigger current_thread.yield() logic in Python
     # taken from https://stackoverflow.com/a/787810
     time.sleep(0.2)
 
