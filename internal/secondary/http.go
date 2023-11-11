@@ -14,7 +14,7 @@ import (
 
 type HttpHandler struct {
 	storage  *storage.InMemoryStorage
-	emulator *util.InconsistencyEmulator
+	emulator *util.BrokenSecondaryEmulator
 }
 
 type GetMessagesResponse struct {
@@ -92,7 +92,7 @@ func createRouter(handler *HttpHandler) *mux.Router {
 func NewSecondaryServer() *http.Server {
 	handler := &HttpHandler{
 		storage:  storage.NewInMemoryStorage(),
-		emulator: util.NewInconsistencyEmulator(),
+		emulator: util.NewBrokenSecondaryEmulator(),
 	}
 
 	port, ok := os.LookupEnv("SECONDARY_SERVER_PORT")

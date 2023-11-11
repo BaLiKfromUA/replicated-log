@@ -116,5 +116,5 @@ def test_if_primary_is_blocked_in_case_of_w_less_then_number_of_available_nodes(
     messages_secondary2 = get_messages(secondary2_url)
 
     # THEN
-    assert not adding_thread.is_alive()
     assert messages == messages_secondary2, "Incorrect messages in SECONDARY_2 storage"
+    assert not adding_thread.is_alive()

@@ -7,7 +7,7 @@ import (
 
 // USE THIS CODE ONLY FOR SYSTEM TESTING!
 
-type InconsistencyEmulator struct {
+type BrokenSecondaryEmulator struct {
 	mu             *sync.Mutex
 	shouldWait     bool
 	shouldWaitCond *sync.Cond
@@ -15,9 +15,9 @@ type InconsistencyEmulator struct {
 	waitCntCond    *sync.Cond
 }
 
-func NewInconsistencyEmulator() *InconsistencyEmulator {
+func NewBrokenSecondaryEmulator() *BrokenSecondaryEmulator {
 	locker := sync.Mutex{}
-	return &InconsistencyEmulator{
+	return &BrokenSecondaryEmulator{
 		mu:             &locker,
 		shouldWait:     false,
 		shouldWaitCond: &sync.Cond{L: &locker},
@@ -26,7 +26,7 @@ func NewInconsistencyEmulator() *InconsistencyEmulator {
 	}
 }
 
-func (emulator *InconsistencyEmulator) BlockRequestIfNeeded() {
+func (emulator *BrokenSecondaryEmulator) BlockRequestIfNeeded() {
 	emulator.mu.Lock()
 	defer emulator.mu.Unlock()
 
@@ -44,7 +44,7 @@ func (emulator *InconsistencyEmulator) BlockRequestIfNeeded() {
 	}
 }
 
-func (emulator *InconsistencyEmulator) ChangeMode(shouldWait bool) {
+func (emulator *BrokenSecondaryEmulator) ChangeMode(shouldWait bool) {
 	emulator.mu.Lock()
 	defer emulator.mu.Unlock()
 	log.Printf("Inconsistency Mode: %t\n", shouldWait)
@@ -59,7 +59,7 @@ func (emulator *InconsistencyEmulator) ChangeMode(shouldWait bool) {
 	}
 }
 
-func (emulator *InconsistencyEmulator) IsShouldWait() bool {
+func (emulator *BrokenSecondaryEmulator) IsShouldWait() bool {
 	emulator.mu.Lock()
 	defer emulator.mu.Unlock()
 
