@@ -35,10 +35,10 @@ func (h *HttpHandler) ReplicateMessage(rw http.ResponseWriter, r *http.Request) 
 	}
 
 	log.Printf("Received message %d with content '%s'\n", message.Id, message.Message)
-	h.emulator.BlockRequestIfNeeded()
-	isAdded := h.storage.AddMessage(message)
-	log.Printf("Added message %d to the storage: %t\n", message.Id, isAdded)
-
+	h.emulator.BlockActionIfNeeded(func() {
+		isAdded := h.storage.AddMessage(message)
+		log.Printf("Added message %d to the storage: %t\n", message.Id, isAdded)
+	})
 	rw.WriteHeader(http.StatusOK)
 }
 

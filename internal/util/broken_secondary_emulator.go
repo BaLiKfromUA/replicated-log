@@ -26,7 +26,7 @@ func NewBrokenSecondaryEmulator() *BrokenSecondaryEmulator {
 	}
 }
 
-func (emulator *BrokenSecondaryEmulator) BlockRequestIfNeeded() {
+func (emulator *BrokenSecondaryEmulator) BlockActionIfNeeded(action func()) {
 	emulator.mu.Lock()
 	defer emulator.mu.Unlock()
 
@@ -38,9 +38,14 @@ func (emulator *BrokenSecondaryEmulator) BlockRequestIfNeeded() {
 			emulator.shouldWaitCond.Wait()
 		}
 
+		log.Printf("[BROKEN SECONDARY] Back to normal life. Unblocking action...")
+
+		action()
+
 		emulator.waitCnt--
-		log.Printf("[BROKEN SECONDARY] Back to normal life...")
-		emulator.waitCntCond.Broadcast()
+		emulator.waitCntCond.Signal()
+	} else {
+		action()
 	}
 }
 
@@ -56,6 +61,9 @@ func (emulator *BrokenSecondaryEmulator) ChangeMode(shouldWait bool) {
 		for emulator.waitCnt > 0 {
 			emulator.waitCntCond.Wait()
 		}
+
+	} else {
+		emulator.waitCnt = 0
 	}
 }
 

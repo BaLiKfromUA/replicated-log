@@ -46,7 +46,14 @@ func NewMonitoringDaemon(urls []string) *MonitoringDaemon {
 
 func (daemon *MonitoringDaemon) StartHealthCheck() {
 	log.Printf("[HEALTH-CHECK] START health check background thread")
-	ticker := time.NewTicker(500 * time.Millisecond)
+
+	period := 500 * time.Millisecond // default value
+	if periodToken, okTimeout := os.LookupEnv("HEALTHCHECK_PERIOD_MILLISECOND"); okTimeout {
+		value, _ := strconv.Atoi(periodToken)
+		period = time.Duration(value) * time.Millisecond
+	}
+
+	ticker := time.NewTicker(period)
 	go func() {
 		for {
 			select {

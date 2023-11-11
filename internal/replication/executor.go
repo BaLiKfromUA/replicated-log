@@ -144,7 +144,7 @@ func (e *Executor) replicateWithRetry(secondaryUrl string, message model.Message
 				return
 			}
 		} else {
-			log.Printf("[EXECUTOR] %s is DEAD", secondaryUrl)
+			log.Printf("[EXECUTOR] Sending message %d to %s. Attempt %d. Secondary is DEAD", message.Id, secondaryUrl, attempt)
 		}
 
 		// 3) Sleep in case of Failure or DEAD Secondary
