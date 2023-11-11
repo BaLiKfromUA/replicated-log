@@ -31,7 +31,7 @@ func (emulator *BrokenSecondaryEmulator) BlockRequestIfNeeded() {
 	defer emulator.mu.Unlock()
 
 	if emulator.shouldWait {
-		log.Printf("Inconsistency emulation is enabled! Waiting...")
+		log.Printf("[BROKEN SECONDARY] Emulation is enabled! Waiting...")
 		emulator.waitCnt++
 
 		for emulator.shouldWait {
@@ -39,7 +39,7 @@ func (emulator *BrokenSecondaryEmulator) BlockRequestIfNeeded() {
 		}
 
 		emulator.waitCnt--
-		log.Printf("Back to normal life...")
+		log.Printf("[BROKEN SECONDARY] Back to normal life...")
 		emulator.waitCntCond.Broadcast()
 	}
 }
@@ -47,7 +47,7 @@ func (emulator *BrokenSecondaryEmulator) BlockRequestIfNeeded() {
 func (emulator *BrokenSecondaryEmulator) ChangeMode(shouldWait bool) {
 	emulator.mu.Lock()
 	defer emulator.mu.Unlock()
-	log.Printf("Inconsistency Mode: %t\n", shouldWait)
+	log.Printf("[BROKEN SECONDARY] Mode: %t\n", shouldWait)
 	emulator.shouldWait = shouldWait
 
 	if !emulator.shouldWait {
