@@ -59,6 +59,10 @@ def test_iteration3_example(primary_url, secondary2_url) -> None:
     is_added = append_message(primary_url, "Msg4", 1)
     assert is_added
 
+    # Check that S2 list is actually empty, just for double check
+    messages_secondary2 = get_messages(secondary2_url)
+    assert [] == messages_secondary2, "Incorrect messages in SECONDARY_2 storage"
+
     # 6) Start S2
     is_unblocked = block_replication(secondary2_url, False)
     assert is_unblocked
