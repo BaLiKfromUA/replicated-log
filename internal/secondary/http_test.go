@@ -97,7 +97,6 @@ func TestHealthCheck(t *testing.T) {
 		resp := httptest.NewRecorder()
 
 		// WHEN
-
 		handler.ServeHTTP(resp, req)
 
 		// THEN

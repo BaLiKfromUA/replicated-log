@@ -117,6 +117,10 @@ func (daemon *MonitoringDaemon) NoQuorum() bool {
 	daemon.mu.Lock()
 	defer daemon.mu.Unlock()
 
+	if len(daemon.secondaryStatuses) == 0 {
+		log.Fatal("[HEALTH-CHECK] No data about secondaries health\n")
+	}
+
 	for _, status := range daemon.secondaryStatuses {
 		if status == ALIVE {
 			return false
