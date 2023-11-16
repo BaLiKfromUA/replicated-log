@@ -50,7 +50,7 @@ paths:
         200:
           description: All good!
   /api/test/clean:
-    description: "Clean database. Use only for system testing"
+    description: "Clean storage. Use only for system testing"
     post:
       responses:
         200:

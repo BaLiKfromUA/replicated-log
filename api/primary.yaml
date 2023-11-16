@@ -19,6 +19,8 @@ paths:
       responses:
         200:
           description: Message is successfully appended
+        405:
+          description: Read-only mode due to inactivity of all secondaries. New message is rejected
   /api/v1/messages:
     get:
       responses:
@@ -34,7 +36,7 @@ paths:
                     items:
                       type: string
   /api/test/clean:
-    description: "Clean database. Use only for system testing"
+    description: "Clean storage. Use only for system testing"
     post:
       responses:
         200:

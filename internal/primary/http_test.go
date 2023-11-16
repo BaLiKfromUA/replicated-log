@@ -226,3 +226,33 @@ func TestReplicationWithSecondariesBothBlocked(t *testing.T) {
 
 	wgForStorageUpdates.Wait() // wait for unblocking of all secondaries
 }
+
+func TestIfPrimaryRejectsAppendMessageIfThereIsNoQuorum(t *testing.T) {
+	// GIVEN
+	secondary := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			// health-check
+			rw.WriteHeader(http.StatusServiceUnavailable)
+		} else {
+			// replication
+			t.Fatal("Replication is not expected to be called")
+		}
+	}))
+	defer secondary.Close()
+
+	t.Setenv("SECONDARY_URLS", secondary.URL)
+
+	primary := NewPrimaryServer()
+	handler := primary.Handler
+
+	messageRequest := AppendMessageRequest{W: 2, Message: "test"}
+	b, _ := json.Marshal(messageRequest)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/append", strings.NewReader(string(b)))
+	resp := httptest.NewRecorder()
+
+	// WHEN
+	handler.ServeHTTP(resp, req)
+
+	// THEN
+	assert.Equal(t, http.StatusMethodNotAllowed, resp.Code)
+}

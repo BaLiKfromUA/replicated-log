@@ -34,6 +34,11 @@ func (h *HttpHandler) AppendMessage(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.executor.NoQuorum() {
+		rw.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
 	message := h.storage.AddRawMessage(payload.Message)
 	h.executor.ReplicateMessage(message, payload.W-1)
 

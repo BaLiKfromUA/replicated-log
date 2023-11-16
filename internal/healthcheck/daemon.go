@@ -112,3 +112,16 @@ func (daemon *MonitoringDaemon) GetStatus(url string) string {
 
 	return status
 }
+
+func (daemon *MonitoringDaemon) NoQuorum() bool {
+	daemon.mu.Lock()
+	defer daemon.mu.Unlock()
+
+	for _, status := range daemon.secondaryStatuses {
+		if status == ALIVE {
+			return false
+		}
+	}
+
+	return true
+}

@@ -46,3 +46,36 @@ func TestIfBadResponseSetsHealthStatusToDead(t *testing.T) {
 	require.Equal(t, before, ALIVE)
 	require.Equal(t, after, DEAD)
 }
+
+func TestNoQuorumReturnsTrueIfAllSecondariesAreDead(t *testing.T) {
+	// GIVEN
+	secondary := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		rw.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer secondary.Close()
+
+	// WHEN
+	daemon := NewMonitoringDaemon([]string{secondary.URL})
+
+	// THEN
+	require.True(t, daemon.NoQuorum())
+}
+
+func TestNoQuorumReturnsFalseIfAtLeastOneSecondaryIsAlive(t *testing.T) {
+	// GIVEN
+	liveSecondary := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		rw.WriteHeader(http.StatusOK)
+	}))
+	defer liveSecondary.Close()
+
+	deadSecondary := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		rw.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer deadSecondary.Close()
+
+	// WHEN
+	daemon := NewMonitoringDaemon([]string{liveSecondary.URL, deadSecondary.URL})
+
+	// THEN
+	require.False(t, daemon.NoQuorum())
+}

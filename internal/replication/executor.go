@@ -162,3 +162,7 @@ func (e *Executor) calculateCurrentSleepTime(failures int) time.Duration {
 	waitInterval := (e.initialSleepTime * multiplierPowN) + randomInterval
 	return waitInterval
 }
+
+func (e *Executor) NoQuorum() bool {
+	return e.health.NoQuorum()
+}
