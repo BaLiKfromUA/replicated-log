@@ -1,7 +1,7 @@
 import threading
 import time
 
-from http_utility import get_messages, block_replication, send_messages
+from http_utility import get_messages, block_replication, send_messages, HEALTHCHECK_PERIOD, append_message
 
 
 def test_inconsistency_and_eventual_consistency_during_replication_with_w_2(primary_url, secondary1_url,
@@ -89,7 +89,7 @@ def test_inconsistency_and_eventual_consistency_during_replication_with_w_1(prim
 def test_if_primary_is_blocked_in_case_of_w_less_then_number_of_available_nodes(primary_url, secondary2_url) -> None:
     # GIVEN
     w = 3
-    messages = ["msg 1"]
+    messages = ["test message"]
 
     # WHEN
     is_blocked = block_replication(secondary2_url, True)
@@ -118,3 +118,47 @@ def test_if_primary_is_blocked_in_case_of_w_less_then_number_of_available_nodes(
     # THEN
     assert messages == messages_secondary2, "Incorrect messages in SECONDARY_2 storage"
     assert not adding_thread.is_alive()
+
+
+def test_if_primary_rejects_append_request_if_there_is_no_quorum(primary_url, secondary1_url, secondary2_url) -> None:
+    # todo: doc
+    # GIVEN
+    w = 2
+    msg = "No Quorum"
+
+    # WHEN
+    is_blocked = block_replication(secondary1_url, True)
+    assert is_blocked
+
+    is_blocked = block_replication(secondary2_url, True)
+    assert is_blocked
+
+    time.sleep(int(HEALTHCHECK_PERIOD) / 1000)  # wait till health will be updated
+
+    # THEN
+    is_appended = append_message(primary_url, msg, w)
+    assert not is_appended  # rejected
+
+    primary_msg = get_messages(primary_url)
+    assert [] == primary_msg
+
+    # WHEN
+    is_unblocked = block_replication(secondary1_url, False)
+    assert is_unblocked
+
+    time.sleep(int(HEALTHCHECK_PERIOD) / 1000)  # wait till health will be updated
+
+    # THEN
+    is_appended = append_message(primary_url, msg, w)
+    assert is_appended  # accepted
+
+    primary_msg = get_messages(primary_url)
+    assert [msg] == primary_msg
+
+# block 2
+# wait one period
+# try to replicate
+# receive false
+# unblock 1
+# replicate with w=2
+# success

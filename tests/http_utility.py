@@ -32,7 +32,7 @@ def clean_storage(url: str) -> bool:
     return resp.status_code == 200
 
 
-def block_replication(url: str, block: bool) -> bool:
+def block_replication(url: str, block: bool, clean_up: bool = False) -> bool:
     data = {
         "enable": block
     }
@@ -40,7 +40,7 @@ def block_replication(url: str, block: bool) -> bool:
     resp = requests.post(url=url + "/api/test/replication_block", json=data, headers=headers)
     print(resp)
 
-    if not block and resp.status_code == 200:
+    if not clean_up and (not block and resp.status_code == 200):
         # wait 2 periods to update health status of secondary node
         time.sleep(int(HEALTHCHECK_PERIOD) / 1000 * 2)
 

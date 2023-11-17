@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from http_utility import clean_storage
+from http_utility import clean_storage, block_replication
 
 PRIMARY_URL = os.getenv("PRIMARY_URL")
 SECONDARY1_URL = os.getenv("SECONDARY1_URL")
@@ -27,6 +27,11 @@ def secondary2_url() -> str:
 @pytest.fixture(autouse=True)
 def clean_up():
     yield
+    # unblock secondaries
+    unblocked = block_replication(SECONDARY1_URL, False, True)
+    assert unblocked
+    unblocked = block_replication(SECONDARY2_URL, False, True)
+    assert unblocked
     # cleaning storages
     result = clean_storage(SECONDARY1_URL)
     assert result
