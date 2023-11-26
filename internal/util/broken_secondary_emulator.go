@@ -7,7 +7,7 @@ import (
 
 // USE THIS CODE ONLY FOR SYSTEM TESTING!
 
-type InconsistencyEmulator struct {
+type BrokenSecondaryEmulator struct {
 	mu             *sync.Mutex
 	shouldWait     bool
 	shouldWaitCond *sync.Cond
@@ -15,9 +15,9 @@ type InconsistencyEmulator struct {
 	waitCntCond    *sync.Cond
 }
 
-func NewInconsistencyEmulator() *InconsistencyEmulator {
+func NewBrokenSecondaryEmulator() *BrokenSecondaryEmulator {
 	locker := sync.Mutex{}
-	return &InconsistencyEmulator{
+	return &BrokenSecondaryEmulator{
 		mu:             &locker,
 		shouldWait:     false,
 		shouldWaitCond: &sync.Cond{L: &locker},
@@ -26,28 +26,33 @@ func NewInconsistencyEmulator() *InconsistencyEmulator {
 	}
 }
 
-func (emulator *InconsistencyEmulator) BlockRequestIfNeeded() {
+func (emulator *BrokenSecondaryEmulator) BlockActionIfNeeded(action func()) {
 	emulator.mu.Lock()
 	defer emulator.mu.Unlock()
 
 	if emulator.shouldWait {
-		log.Printf("Inconsistency emulation is enabled! Waiting...")
+		log.Printf("[BROKEN SECONDARY] Emulation is enabled! Waiting...")
 		emulator.waitCnt++
 
 		for emulator.shouldWait {
 			emulator.shouldWaitCond.Wait()
 		}
 
+		log.Printf("[BROKEN SECONDARY] Back to normal life. Unblocking action...")
+
+		action()
+
 		emulator.waitCnt--
-		log.Printf("Back to normal life...")
-		emulator.waitCntCond.Broadcast()
+		emulator.waitCntCond.Signal()
+	} else {
+		action()
 	}
 }
 
-func (emulator *InconsistencyEmulator) ChangeMode(shouldWait bool) {
+func (emulator *BrokenSecondaryEmulator) ChangeMode(shouldWait bool) {
 	emulator.mu.Lock()
 	defer emulator.mu.Unlock()
-	log.Printf("Inconsistency Mode: %t\n", shouldWait)
+	log.Printf("[BROKEN SECONDARY] Mode: %t\n", shouldWait)
 	emulator.shouldWait = shouldWait
 
 	if !emulator.shouldWait {
@@ -56,5 +61,15 @@ func (emulator *InconsistencyEmulator) ChangeMode(shouldWait bool) {
 		for emulator.waitCnt > 0 {
 			emulator.waitCntCond.Wait()
 		}
+
+	} else {
+		emulator.waitCnt = 0
 	}
+}
+
+func (emulator *BrokenSecondaryEmulator) IsShouldWait() bool {
+	emulator.mu.Lock()
+	defer emulator.mu.Unlock()
+
+	return emulator.shouldWait
 }

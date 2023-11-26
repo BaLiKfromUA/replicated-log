@@ -43,7 +43,7 @@ func (s *InMemoryStorage) AddMessage(message model.Message) bool {
 func (s *InMemoryStorage) addMessageImpl(message model.Message) bool {
 	if _, ok := s.data[message.Id]; ok {
 		// All messages should be present exactly once in the secondary log - deduplication
-		log.Printf("Message %d already exists", message.Id)
+		log.Printf("[DEDUPLICATION] Message %d already exists", message.Id)
 		return false
 	}
 
@@ -56,6 +56,10 @@ func (s *InMemoryStorage) GetMessages() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	if len(s.data) == 0 {
+		return []string{}
+	}
+
 	lastId := model.MessageId(len(s.data) - 1)
 
 	var result []string
@@ -64,14 +68,10 @@ func (s *InMemoryStorage) GetMessages() []string {
 		value, ok := s.data[id]
 		if !ok {
 			// If secondary has received messages [msg1, msg2, msg4], it shouldn’t display the message ‘msg4’ until the ‘msg3’ will be received
-			log.Printf("Message %d is missing, stop getting next messages", id)
+			log.Printf("[TOTAL ORDER] Message %d is missing, stop getting next messages", id)
 			break
 		}
 		result = append(result, value)
-	}
-
-	if result == nil {
-		result = []string{}
 	}
 
 	return result

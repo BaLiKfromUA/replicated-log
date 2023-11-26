@@ -34,6 +34,12 @@ func (h *HttpHandler) AppendMessage(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.executor.NoQuorum() {
+		log.Printf("No Quorum -- READ ONLY MODE, message '%v' is rejected", payload.Message)
+		rw.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
 	message := h.storage.AddRawMessage(payload.Message)
 	h.executor.ReplicateMessage(message, payload.W-1)
 
@@ -84,6 +90,10 @@ func NewPrimaryServer() *http.Server {
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
+
+	srv.RegisterOnShutdown(func() {
+		handler.executor.Close()
+	})
 
 	return srv
 }

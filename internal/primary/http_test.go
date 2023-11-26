@@ -20,12 +20,17 @@ func TestAppendMessageWithOneSecondary(t *testing.T) {
 	b, _ := json.Marshal(messageRequest)
 
 	secondary := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		var actualMessage model.Message
-		err := json.NewDecoder(r.Body).Decode(&actualMessage)
-		// THEN
-		assert.NoError(t, err)
-		assert.Equal(t, messageRequest.Message, actualMessage.Message)
-		rw.WriteHeader(http.StatusOK)
+		if r.Method == http.MethodGet {
+			// health-check
+			rw.WriteHeader(http.StatusOK)
+		} else {
+			var actualMessage model.Message
+			err := json.NewDecoder(r.Body).Decode(&actualMessage)
+			// THEN
+			assert.NoError(t, err)
+			assert.Equal(t, messageRequest.Message, actualMessage.Message)
+			rw.WriteHeader(http.StatusOK)
+		}
 	}))
 	defer secondary.Close()
 
@@ -82,25 +87,35 @@ func TestReplicationWithEmulatedDelayForOneSecondaryOutOfTwo(t *testing.T) {
 
 	storageA := storage.NewInMemoryStorage()
 	secondaryA := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		var message model.Message
-		err := json.NewDecoder(r.Body).Decode(&message)
-		require.NoError(t, err)
-		_ = storageA.AddMessage(message)
-		rw.WriteHeader(http.StatusOK)
+		if r.Method == http.MethodGet {
+			// health-check
+			rw.WriteHeader(http.StatusOK)
+		} else {
+			var message model.Message
+			err := json.NewDecoder(r.Body).Decode(&message)
+			require.NoError(t, err)
+			_ = storageA.AddMessage(message)
+			rw.WriteHeader(http.StatusOK)
+		}
 	}))
 	defer secondaryA.Close()
 
 	storageB := storage.NewInMemoryStorage()
 	secondaryB := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		<-ready // artificial delay
+		if r.Method == http.MethodGet {
+			// health-check
+			rw.WriteHeader(http.StatusOK)
+		} else {
+			<-ready // artificial delay
 
-		var message model.Message
-		err := json.NewDecoder(r.Body).Decode(&message)
-		require.NoError(t, err)
-		_ = storageB.AddMessage(message)
+			var message model.Message
+			err := json.NewDecoder(r.Body).Decode(&message)
+			require.NoError(t, err)
+			_ = storageB.AddMessage(message)
 
-		updated <- struct{}{} // notify test
-		rw.WriteHeader(http.StatusOK)
+			updated <- struct{}{} // notify test
+			rw.WriteHeader(http.StatusOK)
+		}
 	}))
 	defer secondaryB.Close()
 
@@ -168,15 +183,20 @@ func TestReplicationWithSecondariesBothBlocked(t *testing.T) {
 	w := 1 // ACK only from master
 	expectedMessage := "Test"
 	secondaryHandler := func(rw http.ResponseWriter, r *http.Request) {
-		defer wgForStorageUpdates.Done()
-		<-ready // artificial delay
+		if r.Method == http.MethodGet {
+			// health-check
+			rw.WriteHeader(http.StatusOK)
+		} else {
+			defer wgForStorageUpdates.Done()
+			<-ready // artificial delay
 
-		var actualMessage model.Message
-		err := json.NewDecoder(r.Body).Decode(&actualMessage)
-		// THEN
-		require.NoError(t, err)
-		require.Equal(t, expectedMessage, actualMessage.Message)
-		rw.WriteHeader(http.StatusOK)
+			var actualMessage model.Message
+			err := json.NewDecoder(r.Body).Decode(&actualMessage)
+			// THEN
+			require.NoError(t, err)
+			require.Equal(t, expectedMessage, actualMessage.Message)
+			rw.WriteHeader(http.StatusOK)
+		}
 	}
 
 	secondaryA := httptest.NewServer(http.HandlerFunc(secondaryHandler))
@@ -205,4 +225,34 @@ func TestReplicationWithSecondariesBothBlocked(t *testing.T) {
 	close(ready)
 
 	wgForStorageUpdates.Wait() // wait for unblocking of all secondaries
+}
+
+func TestIfPrimaryRejectsAppendMessageIfThereIsNoQuorum(t *testing.T) {
+	// GIVEN
+	secondary := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			// health-check
+			rw.WriteHeader(http.StatusServiceUnavailable)
+		} else {
+			// replication
+			t.Fatal("Replication is not expected to be called")
+		}
+	}))
+	defer secondary.Close()
+
+	t.Setenv("SECONDARY_URLS", secondary.URL)
+
+	primary := NewPrimaryServer()
+	handler := primary.Handler
+
+	messageRequest := AppendMessageRequest{W: 2, Message: "test"}
+	b, _ := json.Marshal(messageRequest)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/append", strings.NewReader(string(b)))
+	resp := httptest.NewRecorder()
+
+	// WHEN
+	handler.ServeHTTP(resp, req)
+
+	// THEN
+	assert.Equal(t, http.StatusMethodNotAllowed, resp.Code)
 }

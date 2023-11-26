@@ -14,7 +14,7 @@ import (
 
 type HttpHandler struct {
 	storage  *storage.InMemoryStorage
-	emulator *util.InconsistencyEmulator
+	emulator *util.BrokenSecondaryEmulator
 }
 
 type GetMessagesResponse struct {
@@ -35,10 +35,10 @@ func (h *HttpHandler) ReplicateMessage(rw http.ResponseWriter, r *http.Request) 
 	}
 
 	log.Printf("Received message %d with content '%s'\n", message.Id, message.Message)
-	h.emulator.BlockRequestIfNeeded()
-	isAdded := h.storage.AddMessage(message)
-	log.Printf("Added message %d to the storage: %t\n", message.Id, isAdded)
-
+	h.emulator.BlockActionIfNeeded(func() {
+		isAdded := h.storage.AddMessage(message)
+		log.Printf("Added message %d to the storage: %t\n", message.Id, isAdded)
+	})
 	rw.WriteHeader(http.StatusOK)
 }
 
@@ -68,11 +68,21 @@ func (h *HttpHandler) SwitchReplicationMode(rw http.ResponseWriter, r *http.Requ
 	rw.WriteHeader(http.StatusOK)
 }
 
+func (h *HttpHandler) HealthCheck(rw http.ResponseWriter, _ *http.Request) {
+	if h.emulator.IsShouldWait() {
+		rw.WriteHeader(http.StatusNotAcceptable)
+	} else {
+		rw.WriteHeader(http.StatusOK)
+	}
+}
+
 func createRouter(handler *HttpHandler) *mux.Router {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/api/v1/internal/replicate", handler.ReplicateMessage).Methods(http.MethodPost)
 	r.HandleFunc("/api/v1/messages", handler.GetMessages).Methods(http.MethodGet)
+	r.HandleFunc("/api/v1/healthcheck", handler.HealthCheck).Methods(http.MethodGet)
+
 	r.HandleFunc("/api/test/clean", handler.CleanStorage).Methods(http.MethodPost)
 	r.HandleFunc("/api/test/replication_block", handler.SwitchReplicationMode).Methods(http.MethodPost)
 
@@ -82,7 +92,7 @@ func createRouter(handler *HttpHandler) *mux.Router {
 func NewSecondaryServer() *http.Server {
 	handler := &HttpHandler{
 		storage:  storage.NewInMemoryStorage(),
-		emulator: util.NewInconsistencyEmulator(),
+		emulator: util.NewBrokenSecondaryEmulator(),
 	}
 
 	port, ok := os.LookupEnv("SECONDARY_SERVER_PORT")
