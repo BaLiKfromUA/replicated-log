@@ -28,9 +28,9 @@ def secondary2_url() -> str:
 def clean_up():
     yield
     # unblock secondaries
-    unblocked = block_replication(SECONDARY1_URL, False, True)
+    unblocked = block_replication(SECONDARY1_URL, False)
     assert unblocked
-    unblocked = block_replication(SECONDARY2_URL, False, True)
+    unblocked = block_replication(SECONDARY2_URL, False)
     assert unblocked
     # cleaning storages
     result = clean_storage(SECONDARY1_URL)

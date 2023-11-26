@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestIfMonitoringDaemonDoesHealthCheckAtMomentOfCreation(t *testing.T) {
@@ -78,4 +79,23 @@ func TestNoQuorumReturnsFalseIfAtLeastOneSecondaryIsAlive(t *testing.T) {
 
 	// THEN
 	require.False(t, daemon.NoQuorum())
+}
+
+func TestIfClientTimeoutSetsHealthStatusToDead(t *testing.T) {
+	// GIVEN
+	secondary := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+		// !!! Sleep time is much bigger than request timeout
+		time.Sleep(50 * time.Millisecond)
+		rw.WriteHeader(http.StatusOK)
+	}))
+	defer secondary.Close()
+
+	// Client timeout is very small
+	t.Setenv("REQUEST_TIMEOUT_MILLISECONDS", "10")
+
+	// WHEN
+	daemon := NewMonitoringDaemon([]string{secondary.URL})
+
+	// THEN
+	require.Equal(t, daemon.GetStatus(secondary.URL), DEAD)
 }

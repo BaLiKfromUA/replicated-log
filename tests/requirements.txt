@@ -1,2 +1,4 @@
 pytest
 requests
+pytest-timeout
+pytest-random-order

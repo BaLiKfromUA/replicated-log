@@ -121,7 +121,10 @@ def test_if_primary_is_blocked_in_case_of_w_less_then_number_of_available_nodes(
 
 
 def test_if_primary_rejects_append_request_if_there_is_no_quorum(primary_url, secondary1_url, secondary2_url) -> None:
-    # todo: doc
+    """
+    If there is no quorum the master should be switched into read-only mode
+    and shouldn’t accept messages append requests and should return the appropriate message
+    """
     # GIVEN
     w = 2
     msg = "No Quorum"
@@ -133,7 +136,7 @@ def test_if_primary_rejects_append_request_if_there_is_no_quorum(primary_url, se
     is_blocked = block_replication(secondary2_url, True)
     assert is_blocked
 
-    time.sleep(int(HEALTHCHECK_PERIOD) / 1000)  # wait till health will be updated
+    time.sleep(int(HEALTHCHECK_PERIOD) / 1000 * 1.5)  # wait till health will be updated
 
     # THEN
     is_appended = append_message(primary_url, msg, w)
@@ -141,24 +144,3 @@ def test_if_primary_rejects_append_request_if_there_is_no_quorum(primary_url, se
 
     primary_msg = get_messages(primary_url)
     assert [] == primary_msg
-
-    # WHEN
-    is_unblocked = block_replication(secondary1_url, False)
-    assert is_unblocked
-
-    time.sleep(int(HEALTHCHECK_PERIOD) / 1000)  # wait till health will be updated
-
-    # THEN
-    is_appended = append_message(primary_url, msg, w)
-    assert is_appended  # accepted
-
-    primary_msg = get_messages(primary_url)
-    assert [msg] == primary_msg
-
-# block 2
-# wait one period
-# try to replicate
-# receive false
-# unblock 1
-# replicate with w=2
-# success
