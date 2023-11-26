@@ -17,7 +17,7 @@ The Replicated Log should have the following deployment architecture: one **Prim
 
 - _GET method_ - returns all replicated messages from the in-memory list
 
-The current implementation provides **tunable semi-synchronicity** for replication with a **retry mechanism** that
+Current implementation provides **tunable semi-synchronicity** for replication with a **retry mechanism** that
 delivers all messages **exactly-once in total order**.
 
 #### Properties and assumptions:
@@ -25,8 +25,8 @@ delivers all messages **exactly-once in total order**.
 - after each POST request, the message should be replicated on every **Secondary** server
 - **Primary** should ensure that Secondaries have received a message via ACK
 - any RPC framework can be used for Primary-Secondary communication (Sockets, language-specific RPC, HTTP, Rest,
-  gRPC, …) -- my implementation uses **REST**.
-- your implementation should support **logging**
+  gRPC, …) -- my implementation uses **RESTful API**.
+- your implementation supports **logging**
 - **Primary** and **Secondaries** should run in **Docker**
 - implementation should provide tunable **semi-synchronicity** for replication, by defining **write concern**
   parameters:
@@ -104,7 +104,7 @@ Used during retry logic [here](https://github.com/BaLiKfromUA/replicated-log/blo
 > If there is no quorum the **Primary** will be switched into **read-only mode** and would
 reject `append-message` requests
 
-No quorum is checked [here](https://github.com/BaLiKfromUA/replicated-log/blob/iteration-3/internal/primary/http.go#L37).
+"No quorum" case is checked [here](https://github.com/BaLiKfromUA/replicated-log/blob/iteration-3/internal/primary/http.go#L37).
 
 Tested via system test [here](https://github.com/BaLiKfromUA/replicated-log/blob/iteration-3/tests/test_replication_with_broken_secondaries.py#L123)
 
