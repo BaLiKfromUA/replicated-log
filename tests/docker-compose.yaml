@@ -1,0 +1,56 @@
+version: '3'
+
+services:
+  primary:
+    build:
+      context: ../
+      dockerfile: build/Dockerfile
+    networks:
+      - isolated_network
+    environment:
+      - APP_MODE=PRIMARY
+      - PRIMARY_SERVER_PORT=8080
+      - SECONDARY_URLS=http://secondary1:8000,http://secondary2:8000
+      - REQUEST_TIMEOUT_MILLISECONDS=100
+      - HEALTHCHECK_PERIOD_MILLISECOND=500
+
+  secondary1:
+    build:
+      context: ../
+      dockerfile: build/Dockerfile
+    networks:
+      - isolated_network
+    environment:
+      - APP_MODE=SECONDARY
+      - SECONDARY_SERVER_PORT=8000
+
+  secondary2:
+    build:
+      context: ../
+      dockerfile: build/Dockerfile
+    networks:
+      - isolated_network
+    environment:
+      - APP_MODE=SECONDARY
+      - SECONDARY_SERVER_PORT=8000
+
+  tester:
+    build:
+      context: ../
+      dockerfile: tests/Dockerfile
+    networks:
+      - isolated_network
+    depends_on:
+      - primary
+      - secondary1
+      - secondary2
+    command: pytest --random-order --timeout=10  -v .
+    environment:
+      - PRIMARY_URL=http://primary:8080
+      - SECONDARY1_URL=http://secondary1:8000
+      - SECONDARY2_URL=http://secondary2:8000
+      - HEALTHCHECK_PERIOD_MILLISECOND=500
+
+networks:
+  isolated_network:
+    driver: bridge
