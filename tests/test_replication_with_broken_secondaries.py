@@ -86,7 +86,7 @@ def test_inconsistency_and_eventual_consistency_during_replication_with_w_1(prim
     assert messages == messages_secondary2, "Incorrect messages in SECONDARY_2 storage"
 
 
-def test_if_primary_is_blocked_in_case_of_w_less_then_number_of_available_nodes(primary_url, secondary2_url) -> None:
+def test_if_primary_is_blocked_in_case_of_w_bigger_then_number_of_available_nodes(primary_url, secondary2_url) -> None:
     # GIVEN
     w = 3
     messages = ["test message"]
