@@ -5,6 +5,8 @@ services:
     build:
       context: ../
       dockerfile: build/Dockerfile
+    ports:
+      - "80:8080"
     networks:
       - isolated_network
     environment:
@@ -18,6 +20,8 @@ services:
     build:
       context: ../
       dockerfile: build/Dockerfile
+    ports:
+      - "81:8000"
     networks:
       - isolated_network
     environment:
@@ -28,28 +32,28 @@ services:
     build:
       context: ../
       dockerfile: build/Dockerfile
+    ports:
+      - "82:8000"
     networks:
       - isolated_network
     environment:
       - APP_MODE=SECONDARY
       - SECONDARY_SERVER_PORT=8000
 
-  tester:
-    build:
-      context: ../
-      dockerfile: tests/Dockerfile
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    container_name: swagger_ui_container
+    ports:
+      - "8051:8080"
     networks:
       - isolated_network
-    depends_on:
-      - primary
-      - secondary1
-      - secondary2
-    command: pytest --random-order --timeout=10  -v .
+    volumes:
+      - ../api:/usr/share/nginx/html/doc
     environment:
-      - PRIMARY_URL=http://primary:8080
-      - SECONDARY1_URL=http://secondary1:8000
-      - SECONDARY2_URL=http://secondary2:8000
-      - HEALTHCHECK_PERIOD_MILLISECOND=500
+      URLS: "[{ url: 'doc/primary.yaml', name: 'Primary'},
+             { url: 'doc/secondary.yaml', name: 'Secondary'},
+            ]"
+      TRY_IT_OUT_ENABLED: "true"
 
 networks:
   isolated_network:

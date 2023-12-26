@@ -119,7 +119,7 @@ Tested via system test [here](https://github.com/BaLiKfromUA/replicated-log/blob
 - System tests (located [here](./tests)):
 
 ```shell
-  cd deployment
+  cd tests
   docker-compose build
   docker-compose run tester
 ```
