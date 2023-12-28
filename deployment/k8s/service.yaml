@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: replicated-log
+spec:
+  selector:
+    app: replicated-log
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP # Choosing this value makes the Service only reachable from within the cluster
+
+  

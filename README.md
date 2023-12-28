@@ -123,3 +123,12 @@ Tested via system test [here](https://github.com/BaLiKfromUA/replicated-log/blob
   docker-compose build
   docker-compose run tester
 ```
+
+
+### How to deploy to k8s
+
+```shell
+minikube image build -t replicated-log:dev -f build/Dockerfile .
+cd deployment/k8s/
+kubectl apply -f . 
+```
