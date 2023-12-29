@@ -12,6 +12,7 @@ RUN go build -o main ./cmd/
 
 FROM alpine:3.14
 
+RUN apk --no-cache add curl bind-tools
 WORKDIR /app
 COPY --from=builder /app/main .
 CMD ["./main"]

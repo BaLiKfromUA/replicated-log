@@ -15,7 +15,7 @@ spec:
         role: primary
     spec:
       containers:
-        - name: replicated-log
+        - name: replicated-log-container
           image: replicated-log:dev
           imagePullPolicy: Never
           env:
@@ -28,6 +28,6 @@ spec:
             - name: HEALTHCHECK_PERIOD_MILLISECOND
               value: "500"
             - name: SECONDARY_URLS
-              value: "http://replicated-log-secondary-0.default.svc.cluster.local:8080,http://replicated-log-secondary-1.default.svc.cluster.local:8080"
+              value: "http://replicated-log-secondary-0.replicated-log-secondary.default.svc.cluster.local:8080,http://replicated-log-secondary-1.replicated-log-secondary.default.svc.cluster.local:8080"
           ports:
             - containerPort: 8080
