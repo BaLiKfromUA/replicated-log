@@ -131,16 +131,17 @@ Tested via system test [here](https://github.com/BaLiKfromUA/replicated-log/blob
 minikube image build -t replicated-log:dev -f build/Dockerfile .
 cd deployment/k8s/
 kubectl apply -f . 
-```
 
-To get logs of services:
-```shell
 # find names
 kubectl get pods
 kubectl get deployment
 kubectl get statefulset
+
 # get logs
 kubectl logs -f deployment/replicated-log-primary
 kubectl logs -f pods/replicated-log-secondary-0
 kubectl logs -f pods/replicated-log-secondary-1
+
+# get url for ui
+minikube service swagger-service --url
 ```
