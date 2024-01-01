@@ -4,8 +4,8 @@ info:
   description: Basic API for secondary servers
   version: 1.0.0
 servers:
-  - url: http://localhost:81
-  - url: http://localhost:82
+  - url: /secondary-0
+  - url: /secondary-1
 components:
   schemas:
     MessageId:

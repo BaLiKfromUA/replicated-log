@@ -128,9 +128,12 @@ Tested via system test [here](https://github.com/BaLiKfromUA/replicated-log/blob
 ### How to deploy to k8s
 
 ```shell
+minikube start
+
 minikube image build -t replicated-log:dev -f build/Dockerfile .
-cd deployment/k8s/
-kubectl apply -f . 
+minikube image build -t swagger-ui:dev -f api/Dockerfile .
+kubectl create configmap nginx-config --from-file=deployment/k8s/nginx.conf
+kubectl apply -f deployment/k8s/. 
 
 # find names
 kubectl get pods
