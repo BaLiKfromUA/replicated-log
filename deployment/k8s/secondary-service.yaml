@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: replicated-log-secondary
+spec:
+  clusterIP: None
+  selector:
+    app: replicated-log
+    role: secondary
+  ports:
+    - protocol: TCP
+      port: 8080
+
+  

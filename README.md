@@ -119,7 +119,32 @@ Tested via system test [here](https://github.com/BaLiKfromUA/replicated-log/blob
 - System tests (located [here](./tests)):
 
 ```shell
-  cd deployment
+  cd tests
   docker-compose build
   docker-compose run tester
+```
+
+
+### How to deploy to k8s
+
+```shell
+minikube start
+
+minikube image build -t replicated-log:dev -f build/Dockerfile .
+minikube image build -t swagger-ui:dev -f api/Dockerfile .
+kubectl create configmap nginx-config --from-file=deployment/k8s/nginx.conf
+kubectl apply -f deployment/k8s/. 
+
+# find names
+kubectl get pods
+kubectl get deployment
+kubectl get statefulset
+
+# get logs
+kubectl logs -f deployment/replicated-log-primary
+kubectl logs -f pods/replicated-log-secondary-0
+kubectl logs -f pods/replicated-log-secondary-1
+
+# get url for ui
+minikube service swagger-service --url
 ```

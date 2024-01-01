@@ -3,6 +3,9 @@ info:
   title: Secondary
   description: Basic API for secondary servers
   version: 1.0.0
+servers:
+  - url: /secondary-0
+  - url: /secondary-1
 components:
   schemas:
     MessageId:

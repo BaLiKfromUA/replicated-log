@@ -1,0 +1,35 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: swagger-ui
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: swagger-ui
+  template:
+    metadata:
+      labels:
+        app: swagger-ui
+    spec:
+      containers:
+        - name: swagger-docker
+          image: swagger-ui:dev
+          imagePullPolicy: Never
+          env:
+            - name: TRY_IT_OUT_ENABLED
+              value: "true"
+            - name: URLS
+              value: "[{ url: '/doc/primary.yaml', name: 'Primary'},
+                       { url: '/doc/secondary.yaml', name: 'Secondary'},
+                      ]"
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+            - name: nginx-config
+              configMap:
+                name: nginx-config

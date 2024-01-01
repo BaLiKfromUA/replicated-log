@@ -2,6 +2,7 @@ package primary
 
 import (
 	"encoding/json"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -84,8 +85,12 @@ func NewPrimaryServer() *http.Server {
 		port = "8000"
 	}
 
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Authorization", "Content-Type"})
+	originsOk := handlers.AllowedOrigins([]string{"*"})
+	methodsOk := handlers.AllowedMethods([]string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions})
+
 	srv := &http.Server{
-		Handler:      createRouter(handler),
+		Handler:      handlers.CORS(originsOk, headersOk, methodsOk)(createRouter(handler)),
 		Addr:         "0.0.0.0:" + port,
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,

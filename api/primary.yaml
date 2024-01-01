@@ -3,6 +3,8 @@ info:
   title: Primary
   description: Basic API for primary server
   version: 1.0.0
+servers:
+  - url: /primary
 paths:
   /api/v1/append:
     post:

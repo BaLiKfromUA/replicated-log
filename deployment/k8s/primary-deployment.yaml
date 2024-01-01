@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: replicated-log-primary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: replicated-log
+      role: primary
+  template:
+    metadata:
+      labels:
+        app: replicated-log
+        role: primary
+    spec:
+      containers:
+        - name: replicated-log-container
+          image: replicated-log:dev
+          imagePullPolicy: Never
+          env:
+            - name: APP_MODE
+              value: "PRIMARY"
+            - name: PRIMARY_SERVER_PORT
+              value: "8080"
+            - name: REQUEST_TIMEOUT_MILLISECONDS
+              value: "100"
+            - name: HEALTHCHECK_PERIOD_MILLISECOND
+              value: "500"
+            - name: SECONDARY_URLS
+              value: "http://replicated-log-secondary-0.replicated-log-secondary.default.svc.cluster.local:8080,http://replicated-log-secondary-1.replicated-log-secondary.default.svc.cluster.local:8080"
+          ports:
+            - containerPort: 8080
