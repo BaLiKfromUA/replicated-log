@@ -17,8 +17,7 @@ spec:
     spec:
       containers:
         - name: replicated-log-container
-          image: replicated-log:dev
-          imagePullPolicy: Never
+          image: replicated-log
           env:
             - name: APP_MODE
               value: "SECONDARY"

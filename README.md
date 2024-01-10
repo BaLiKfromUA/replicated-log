@@ -129,10 +129,7 @@ Tested via system test [here](https://github.com/BaLiKfromUA/replicated-log/blob
 
 ```shell
 minikube start
-
-minikube image build -t replicated-log:dev -f build/Dockerfile .
-minikube image build -t swagger-ui:dev -f api/Dockerfile .
-kubectl apply -f deployment/k8s/. 
+kubectl apply -k deployment/k8s/. 
 
 # find names
 kubectl get pods
