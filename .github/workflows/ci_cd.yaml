@@ -104,6 +104,10 @@ jobs:
           kustomize edit set image swagger-ui=$DOCKER_USERNAME/swagger-ui:$GITHUB_SHA
           cat kustomization.yaml
 
+      - name: Deploy updated Kubernetes resources
+        run: |
+          kubectl apply -k deployment/k8s/ 
+
       - name: Commit files
         run: |
           git config --local user.email "action@github.com"
