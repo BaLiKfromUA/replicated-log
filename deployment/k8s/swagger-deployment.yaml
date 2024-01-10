@@ -14,8 +14,7 @@ spec:
     spec:
       containers:
         - name: swagger-docker
-          image: swagger-ui:dev
-          imagePullPolicy: Never
+          image: swagger-ui
           env:
             - name: TRY_IT_OUT_ENABLED
               value: "true"
