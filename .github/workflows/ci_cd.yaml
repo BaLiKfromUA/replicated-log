@@ -93,7 +93,6 @@ jobs:
       - name: Get the GKE credentials so we can deploy to the cluster
         run: |
           gcloud container clusters get-credentials "$GKE_CLUSTER" --region "$GKE_REGION"
-          gcloud components install gke-gcloud-auth-plugin
 
       - name: Update Kubernetes resources
         env:
@@ -107,7 +106,9 @@ jobs:
 
       - name: Deploy updated Kubernetes resources
         run: |
-          kubectl apply -k deployment/k8s/ 
+          kubectl apply -k deployment/k8s/
+          sleep 10s
+          kubectl get pods
 
       - name: Commit files
         run: |
