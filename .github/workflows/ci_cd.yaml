@@ -108,8 +108,6 @@ jobs:
       - name: Deploy updated Kubernetes resources
         run: |
           kubectl apply -k deployment/k8s/
-          sleep 10s
-          kubectl get pods
 
       - name: Commit files
         run: |
