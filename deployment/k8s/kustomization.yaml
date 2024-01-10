@@ -12,7 +12,7 @@ namespace: default
 images:
 - name: replicated-log
   newName: balikfromua/replicated-log
-  newTag: 8b0849aa491c6099442d6612a90e3e5141b927a2
+  newTag: df326bed3a8fc44509fb8980b1549563cda5ca29
 - name: swagger-ui
   newName: balikfromua/swagger-ui
-  newTag: 8b0849aa491c6099442d6612a90e3e5141b927a2
+  newTag: df326bed3a8fc44509fb8980b1549563cda5ca29
