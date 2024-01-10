@@ -132,7 +132,6 @@ minikube start
 
 minikube image build -t replicated-log:dev -f build/Dockerfile .
 minikube image build -t swagger-ui:dev -f api/Dockerfile .
-kubectl create configmap nginx-config --from-file=deployment/k8s/nginx.conf
 kubectl apply -f deployment/k8s/. 
 
 # find names
